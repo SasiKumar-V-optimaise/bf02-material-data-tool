@@ -1,0 +1,67 @@
+[INFO   | logger           | L11] 2024-12-10T23:45:00+0000: Driver [C:\Users\sairi\.wdm\drivers\chromedriver\win64\126.0.6478.182\chromedriver-win32/chromedriver.exe] found in cache | logger.py
+[INFO   | downloader           | L54] 2024-12-10T23:45:01+0000: Opening webpage... | downloader.py
+[INFO   | downloader           | L72] 2024-12-10T23:45:01+0000: Clicking download button... | downloader.py
+[INFO   | downloader           | L84] 2024-12-10T23:45:02+0000: File downloaded successfully. | downloader.py
+[INFO   | pipeline           | L17] 2024-12-10T23:45:04+0000: Downloaded file to: E:\Personal\MarketResearch\EvonithSteel\Blast Furnace Project\PythonBlastFurnace\evonith_datafeed_job\data\data.csv | pipeline.py
+[INFO   | task_engine           | L272] 2024-12-10T23:45:04+0000: Finished in state Completed() | task_engine.py
+[INFO   | pipeline           | L25] 2024-12-10T23:45:04+0000: Starting data preprocessing task... | pipeline.py
+[INFO   | transformer           | L17] 2024-12-10T23:45:05+0000: timestep for file - 2024-12-10 23:45:01 | transformer.py
+[INFO   | transformer           | L29] 2024-12-10T23:45:05+0000: Wrote ['BF2_BFBD Furnace Body 12975mm Temp A', 'BF2_BFBD Furnace Body 12975mm Temp B', 'BF2_BFBD Furnace Body 12975mm Temp C', 'BF2_BFBD Furnace Body 12975mm Temp D', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A'] of temperature_variables for 2024-12-10 23:45:01. | transformer.py
+[INFO   | transformer           | L29] 2024-12-10T23:45:05+0000: Wrote ['BF2 Coal flow switch No 1', 'BF2 Coal flow switch No 10', 'BF2 Coal flow switch No 11', 'BF2 Coal flow switch No 12', 'BF2 Coal flow switch No 13'] of switch_variables for 2024-12-10 23:45:01. | transformer.py
+[INFO   | pipeline           | L27] 2024-12-10T23:45:05+0000: Data preprocessing complete. | pipeline.py
+[INFO   | task_engine           | L272] 2024-12-10T23:45:05+0000: Finished in state Completed() | task_engine.py
+[INFO   | pipeline           | L35] 2024-12-10T23:45:05+0000: Starting data write task... | pipeline.py
+[INFO   | writer           | L24] 2024-12-10T23:45:05+0000: Called the influxdb client <influxdb_client_3.InfluxDBClient3 object at 0x000001EC49171820>. | writer.py
+[INFO   | _client           | L1742] 2024-12-10T23:45:05+0000: HTTP Request: POST http://127.0.0.1:8355/api/logs/ "HTTP/1.1 201 Created" | _client.py
+[INFO   | pipeline           | L37] 2024-12-10T23:45:05+0000: Data successfully written to InfluxDB. | pipeline.py
+[INFO   | task_engine           | L272] 2024-12-10T23:45:05+0000: Finished in state Completed() | task_engine.py
+[INFO   | pipeline           | L52] 2024-12-10T23:45:05+0000: Data pipeline completed successfully. | pipeline.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:05+0000: HTTP Request: POST http://127.0.0.1:8355/api/flow_runs/f93bb514-91e0-4bef-be8e-d3e3e2b597d2/set_state "HTTP/1.1 201 Created" | _client.py
+[INFO   | flow_engine           | L685] 2024-12-10T23:45:05+0000: Finished in state Completed() | flow_engine.py
+[INFO   | app           | L17] 2024-12-10T23:45:05+0000: Finished | app.py
+[INFO   | app           | L19] 2024-12-10T23:45:05+0000: Took 0:00:11.038580 seconds. | app.py
+[INFO   | app           | L14] 2024-12-10T23:45:05+0000: Start Time 2024-12-10 23:45:05.552512 | app.py
+[INFO   | app           | L15] 2024-12-10T23:45:05+0000: Starting the data pipeline | app.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:05+0000: HTTP Request: GET http://127.0.0.1:8355/api/admin/version "HTTP/1.1 200 OK" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:05+0000: HTTP Request: GET http://127.0.0.1:8355/api/csrf-token?client=84ac51c9-79b9-4549-b215-9528caa6185a "HTTP/1.1 422 Unprocessable Entity" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:05+0000: HTTP Request: POST http://127.0.0.1:8355/api/flows/ "HTTP/1.1 200 OK" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:05+0000: HTTP Request: POST http://127.0.0.1:8355/api/flow_runs/ "HTTP/1.1 201 Created" | _client.py
+[INFO   | flow_engine           | L496] 2024-12-10T23:45:05+0000: Created flow run 'satisfied-snail' for flow 'bf-data-200var' | flow_engine.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:06+0000: HTTP Request: POST http://127.0.0.1:8355/api/flow_runs/b3170fe1-9a3d-4e7c-a106-c6d9828aa522/set_state "HTTP/1.1 201 Created" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:06+0000: HTTP Request: GET http://127.0.0.1:8355/api/flow_runs/b3170fe1-9a3d-4e7c-a106-c6d9828aa522 "HTTP/1.1 200 OK" | _client.py
+[INFO   | _client           | L1742] 2024-12-10T23:45:07+0000: HTTP Request: POST http://127.0.0.1:8355/api/logs/ "HTTP/1.1 201 Created" | _client.py
+[INFO   | pipeline           | L44] 2024-12-10T23:45:10+0000: Starting data pipeline... | pipeline.py
+[INFO   | pipeline           | L15] 2024-12-10T23:45:10+0000: Starting download task... | pipeline.py
+[INFO   | helper_functions_downloader           | L36] 2024-12-10T23:45:10+0000: No CSV files found to delete. | helper_functions_downloader.py
+[INFO   | downloader           | L34] 2024-12-10T23:45:10+0000: Downloading to E:\Personal\MarketResearch\EvonithSteel\Blast Furnace Project\PythonBlastFurnace\evonith_datafeed_job\data | downloader.py
+[INFO   | logger           | L11] 2024-12-10T23:45:10+0000: ====== WebDriver manager ====== | logger.py
+[INFO   | logger           | L11] 2024-12-10T23:45:11+0000: Get LATEST chromedriver version for google-chrome | logger.py
+[INFO   | logger           | L11] 2024-12-10T23:45:11+0000: Get LATEST chromedriver version for google-chrome | logger.py
+[INFO   | logger           | L11] 2024-12-10T23:45:11+0000: Driver [C:\Users\sairi\.wdm\drivers\chromedriver\win64\126.0.6478.182\chromedriver-win32/chromedriver.exe] found in cache | logger.py
+[INFO   | downloader           | L54] 2024-12-10T23:45:12+0000: Opening webpage... | downloader.py
+[INFO   | downloader           | L72] 2024-12-10T23:45:13+0000: Clicking download button... | downloader.py
+[INFO   | downloader           | L84] 2024-12-10T23:45:13+0000: File downloaded successfully. | downloader.py
+[INFO   | pipeline           | L17] 2024-12-10T23:45:15+0000: Downloaded file to: E:\Personal\MarketResearch\EvonithSteel\Blast Furnace Project\PythonBlastFurnace\evonith_datafeed_job\data\data.csv | pipeline.py
+[INFO   | task_engine           | L272] 2024-12-10T23:45:15+0000: Finished in state Completed() | task_engine.py
+[INFO   | pipeline           | L25] 2024-12-10T23:45:16+0000: Starting data preprocessing task... | pipeline.py
+[INFO   | transformer           | L17] 2024-12-10T23:45:16+0000: timestep for file - 2024-12-10 23:45:12 | transformer.py
+[INFO   | transformer           | L29] 2024-12-10T23:45:16+0000: Wrote ['BF2_BFBD Furnace Body 12975mm Temp A', 'BF2_BFBD Furnace Body 12975mm Temp B', 'BF2_BFBD Furnace Body 12975mm Temp C', 'BF2_BFBD Furnace Body 12975mm Temp D', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A', 'BF2_BFBD Furnace Body 15162mm Temp A'] of temperature_variables for 2024-12-10 23:45:12. | transformer.py
+[INFO   | transformer           | L29] 2024-12-10T23:45:16+0000: Wrote ['BF2 Coal flow switch No 1', 'BF2 Coal flow switch No 10', 'BF2 Coal flow switch No 11', 'BF2 Coal flow switch No 12', 'BF2 Coal flow switch No 13'] of switch_variables for 2024-12-10 23:45:12. | transformer.py
+[INFO   | pipeline           | L27] 2024-12-10T23:45:16+0000: Data preprocessing complete. | pipeline.py
+[INFO   | task_engine           | L272] 2024-12-10T23:45:16+0000: Finished in state Completed() | task_engine.py
+[INFO   | pipeline           | L35] 2024-12-10T23:45:16+0000: Starting data write task... | pipeline.py
+[INFO   | writer           | L24] 2024-12-10T23:45:16+0000: Called the influxdb client <influxdb_client_3.InfluxDBClient3 object at 0x000001EC4915BD10>. | writer.py
+[INFO   | pipeline           | L37] 2024-12-10T23:45:16+0000: Data successfully written to InfluxDB. | pipeline.py
+[INFO   | task_engine           | L272] 2024-12-10T23:45:16+0000: Finished in state Completed() | task_engine.py
+[INFO   | pipeline           | L52] 2024-12-10T23:45:16+0000: Data pipeline completed successfully. | pipeline.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:16+0000: HTTP Request: POST http://127.0.0.1:8355/api/flow_runs/b3170fe1-9a3d-4e7c-a106-c6d9828aa522/set_state "HTTP/1.1 201 Created" | _client.py
+[INFO   | flow_engine           | L685] 2024-12-10T23:45:16+0000: Finished in state Completed() | flow_engine.py
+[INFO   | app           | L17] 2024-12-10T23:45:16+0000: Finished | app.py
+[INFO   | app           | L19] 2024-12-10T23:45:16+0000: Took 0:00:11.234347 seconds. | app.py
+[INFO   | app           | L14] 2024-12-10T23:45:16+0000: Start Time 2024-12-10 23:45:16.787877 | app.py
+[INFO   | app           | L15] 2024-12-10T23:45:16+0000: Starting the data pipeline | app.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:17+0000: HTTP Request: GET http://127.0.0.1:8355/api/admin/version "HTTP/1.1 200 OK" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:17+0000: HTTP Request: GET http://127.0.0.1:8355/api/csrf-token?client=6dda14e7-02d1-4d8b-902f-8ed591bd4315 "HTTP/1.1 422 Unprocessable Entity" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:17+0000: HTTP Request: POST http://127.0.0.1:8355/api/flows/ "HTTP/1.1 200 OK" | _client.py
+[INFO   | _client           | L1027] 2024-12-10T23:45:17+0000: HTTP Request: POST http://127.0.0.1:8355/api/flow_runs/ "HTTP/1.1 201 Created" | _client.py
+[INFO   | flow_engine           | L496] 2024-12-10T23:45:17+0000: Created flow run 'sassy-waxbill' for flow 'bf-data-200var' | flow_engine.py

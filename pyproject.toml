@@ -1,0 +1,19 @@
+[project]
+name = "evonith-datafeed-job"
+version = "0.1.0"
+description = ""
+authors = [{ name = "Saikumar Yeddula", email = "saikumar.yeddula@v-optimai.com" }]
+requires-python = "<4.0,>=3.9"
+readme = "README.md"
+dependencies = [
+    "pandas<3.0.0,>=2.2.3",
+    "prefect<4.0.0,>=3.1.5",
+    "influxdb3-python<1.0.0,>=0.10.0",
+    "selenium<5.0.0,>=4.27.1",
+    "webdriver-manager<5.0.0,>=4.0.2",
+    "pytest<9.0.0,>=8.3.4",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

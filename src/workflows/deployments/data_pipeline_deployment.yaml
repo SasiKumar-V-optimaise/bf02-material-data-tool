@@ -1,0 +1,8 @@
+version: 1
+flows:
+  - name: data_pipeline
+    schedule:
+      interval: 10  # Every 10 seconds
+    description: "Evonith Datafeed Prefect pipeline running every 10 seconds"
+    work_queue:
+      - name: default
