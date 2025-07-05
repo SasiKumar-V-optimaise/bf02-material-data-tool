@@ -17,6 +17,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
 from webdriver_manager.chrome import ChromeDriverManager
+import re
+import json
 
 log = logging.getLogger("root")
 project_root = Path(__file__).resolve().parents[2]
@@ -47,6 +49,9 @@ def extract_datetime_from_filename(filename: str) -> datetime:
     except ValueError as e:
         raise ValueError(f"Filename does not match the expected datetime format: {stem}") from e
 
+
+
+
 def setup_browser_driver():
     """
     Set up and return a Selenium Chrome WebDriver with predefined options.
@@ -62,7 +67,7 @@ def setup_browser_driver():
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=chrome_options)
 
-def login_dsm(driver, wait):
+def login_dsm(driver, wait,LOGIN_URL, USER, PASSWD,):
     """
     Log in to the DSM web interface using credentials from environment variables.
     Maximizes the browser window, navigates to the login page, and submits the login form.
@@ -89,16 +94,13 @@ def login_dsm(driver, wait):
 
 
 
+METADATA_FILE = "downloaded_metadata.json"
+
 def go_to_file_station_and_download(driver, wait, target_files):
     """
-    Navigate to File Station, download each file in target_files by double-clicking its icon.
-    Then jump into the HOURLY Charge & Dump folder, sort by Modified Time desc,
-    and download the top .xlsx file immediately.
+    Navigate to File Station, download each file in target_files if modified time has changed.
+    Also enters the HOURLY folder but only downloads the latest hourly file once.
     """
-    import time
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.common.action_chains import ActionChains
-    from selenium.webdriver.support import expected_conditions as EC
 
     ROOT_URL = "https://ithelpdesk-ugml.sg4.quickconnect.to/index.cgi?launchApp=SYNO.SDS.App.FileStation3.Instance"
     HOURLY_URL = (
@@ -108,29 +110,88 @@ def go_to_file_station_and_download(driver, wait, target_files):
         "CHARGE%2520AND%2520DUMP%252FHOURLY%252F"
     )
 
-    # 1. Download root-level files
+    def normalize(s):
+        return re.sub(r'\s+', ' ', s).strip().lower()
+
+    # Load or create metadata file
+    if os.path.exists(METADATA_FILE):
+        with open(METADATA_FILE, "r") as f:
+            previous_metadata = json.load(f)
+    else:
+        previous_metadata = {}
+
+    # STEP 1: Root directory
     print("📁 Navigating to File Station root…")
     driver.get(ROOT_URL)
     wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
     time.sleep(3)
 
+    try:
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "x-grid3-row")))
+        time.sleep(2)
+    except:
+        print("⚠️ File list did not appear — exiting.")
+        return
+
+    file_rows = driver.execute_script("""
+        return Array.from(
+            document.querySelectorAll('.x-grid3-body .x-grid3-row')
+        ).map(row => {
+            const cells = Array.from(row.querySelectorAll('.x-grid3-cell-inner')).map(c => c.innerText.trim());
+            return {
+                element: row,
+                name: cells[0] || "",
+                size: cells[1] || "",
+                type: cells[2] || "",
+                modified: cells[3] || ""
+            };
+        });
+    """)
+    print(f"📋 {len(file_rows)} items found in root directory.")
+
     for fname in target_files:
-        lower = fname.lower()
-        print(f"🔍 Looking for '{fname}'…")
-        xpath = (
-            "//div[contains(@class,'webfm-file-type-icon') and "
-            f"contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), \"{lower}\")]"
-        )
+        print(f"🔍 Looking for '{fname}'...")
+        matched_row = None
+        for row in file_rows:
+            if normalize(fname) in normalize(row["name"]):
+                matched_row = row
+                break
+
+        if not matched_row:
+            print(f"⚠️ '{fname}' not found in visible list.")
+            continue
+
         try:
-            el = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
-            wrap = el.find_element(By.XPATH, "..")
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", wrap)
-            wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
-            print(f"➡️ Downloading root file '{fname}'…")
-            ActionChains(driver).move_to_element(wrap).double_click(wrap).perform()
-            time.sleep(5)
+            row_element = matched_row["element"]
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", row_element)
+            time.sleep(1)
+
+            current_modified = matched_row["modified"]
+            previous_modified = previous_metadata.get(fname)
+
+            print(f"📄 Found: {matched_row['name']} | 🕒 Modified: {current_modified} | 📏 Size: {matched_row['size']}")
+
+            if previous_modified and current_modified != previous_modified:
+                print(f"📥 Change detected (was: {previous_modified}) → Downloading...")
+                ActionChains(driver).move_to_element(row_element).double_click(row_element).perform()
+                time.sleep(5)
+                print(f"✅ Download complete for '{fname}'")
+                previous_metadata[fname] = current_modified
+            else:
+                print(f"⏩ No change or first-time file — skipping download.")
+
+
         except Exception as e:
             print(f"⚠️ Couldn’t download '{fname}': {e}")
+
+    # Save updated metadata
+    with open(METADATA_FILE, "w") as f:
+        json.dump(previous_metadata, f, indent=2)
+
+
+
+
+
 
     # 2. Go to HOURLY folder
     print("📁 Navigating to HOURLY folder…")
@@ -177,60 +238,7 @@ def go_to_file_station_and_download(driver, wait, target_files):
 
 
 
-def merge_hourly_excel(filepath):
-    """
-    Merge DUMP_REPORT and SH_REPORT by exact DATETIME string match (no rounding),
-    placing DUMP + SH data in one row if timestamps are equal.
-    """
-    try:
-        print(f"📂 Reading Excel file: {filepath}")
-        xl = pd.ExcelFile(filepath)
-        sheet_names = xl.sheet_names
-
-        if len(sheet_names) < 2:
-            print("⚠️ Less than 2 sheets found.")
-            return
-
-        # Parse from B7
-        df_dump = xl.parse(sheet_names[0], skiprows=6)
-        df_sh = xl.parse(sheet_names[1], skiprows=6)
-
-        # Clean up headers
-        df_dump.columns = df_dump.columns.str.strip()
-        df_sh.columns = df_sh.columns.str.strip()
-
-        # Drop Excel index columns if present
-        df_dump = df_dump.loc[:, ~df_dump.columns.str.contains("Unnamed", case=False)]
-        df_sh = df_sh.loc[:, ~df_sh.columns.str.contains("Unnamed", case=False)]
-
-        # print(f"✅ Sheets read: {sheet_names[0]} ({len(df_dump)} rows), {sheet_names[1]} ({len(df_sh)} rows)")
-        # print(f"🔍 Columns in DUMP_REPORT: {list(df_dump.columns)}")
-        # print(f"🔍 Columns in SH_REPORT: {list(df_sh.columns)}")
-
-        # Ensure 'DATETIME' is treated as string to avoid datetime precision mismatch
-        df_dump['DATETIME'] = df_dump['DATETIME'].astype(str).str.strip()
-        df_sh['DATETIME'] = df_sh['DATETIME'].astype(str).str.strip()
-
-        # Merge by exact DATETIME string
-        merged_df = pd.merge(df_dump, df_sh, on='DATETIME', how='outer').sort_values('DATETIME')
-
-        # Save output
-        output_path = os.path.splitext(filepath)[0] + "_MERGED_EXACT.xlsx"
-        merged_df.to_excel(output_path, index=False)
-
-        print(f"✅ Final merged Excel saved to: {output_path}")
-        # print("📄 First 5 merged rows:")
-
-        # print(merged_df.head())
-
-        return output_path
-
-    except Exception as e:
-        print(f"❌ Error during merge: {e}")
-        return None
-
-
-def read_sheets_by_config(
+def read_rm_sheet(
     file_path: str,
     RM_SHEET_CONFIG: dict,
     start_date: str = "01-Jun-2025",
@@ -238,7 +246,7 @@ def read_sheets_by_config(
 ):
     """
     Reads and combines raw sheets per RM_SHEET_CONFIG (with SINTER averaging).
-    Saves a stacked “combined_bunker_data.xlsx” with all rows.
+    Saves a stacked “combined_bunker_data.xlsx” in output_dir.
 
     Parameters:
         file_path (str): Path to the Excel file.
@@ -246,8 +254,6 @@ def read_sheets_by_config(
         start_date (str): Only include rows on/after this date (format: "dd-MMM-yyyy").
         output_dir (str): Directory to save the combined Excel file.
     """
-    import os
-
     print(f"\n📄 Reading Excel file: {file_path}")
     start_dt = datetime.strptime(start_date, "%d-%b-%Y").date()
     print(f"   ↪️ Including rows on/after {start_dt.isoformat()}")
@@ -314,51 +320,63 @@ def read_sheets_by_config(
             else:
                 print("   ⚠️  No SINTER averages")
 
-        # date filter
-        if "DATE" in df.columns:
+        # Filter by date and ensure DATE and SHIFT are not missing
+        if "DATE" in df.columns and "SHIFT" in df.columns:
             df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce").dt.date
+            df["SHIFT"] = df["SHIFT"].astype(str).str.strip().replace({"": pd.NA, "nan": pd.NA, "NaN": pd.NA})
+            
             before = len(df)
+            df = df[df["DATE"].notna() & df["SHIFT"].notna()]
             df = df[df["DATE"] >= start_dt].reset_index(drop=True)
-            print(f"   ↪️  Kept {len(df)}/{before} rows ≥ {start_dt}")
+            
+            print(f"   ↪️  Kept {len(df)}/{before} rows with valid DATE and SHIFT ≥ {start_dt}")
         else:
-            print("   ⚠️  No DATE col — keeping all")
+            print("   ⚠️  DATE and SHIFT columns missing — skipping this sheet")
+            continue
 
-        # prefix & collect
+
+        # Prefix columns and collect
         df.columns = [prefix + str(c) for c in df.columns]
+
         if not df.empty:
             parts.append(df)
             print(f"   ✅  {key}: included {len(df)} rows")
         else:
-            print(f"   ❌  {key}: no data left")
+            print(f"   ❌  {key}: no valid data")
 
     if not parts:
-        print("⚠️  No data combined — exiting.")
+        print("⚠️  No valid data combined — exiting.")
         return
 
     combined = pd.concat(parts, axis=1)
 
-    # collapse any *_DATE → single “Date”
+    # Collapse *_DATE columns to single 'Date'
     date_cols = [c for c in combined.columns if c.upper().endswith("_DATE")]
     if date_cols:
         combined["Date"] = combined[date_cols[0]]
         combined = combined.drop(columns=date_cols)
         combined = combined[["Date"] + [c for c in combined.columns if c != "Date"]]
 
-    # write output
+    # Save to output directory
     combined.to_excel(combined_path, index=False)
     print(f"\n✅  Final combined data written → {combined_path}")
+
+
+
+
 
 
 
 def read_dpr_sheet(file_path, config, output_dir="outputs"):
     """
     Reads DPR sheets based on YAML config, renames fields (no aggregation),
-    and saves the data to Excel.
+    and saves each processed sheet as a separate Excel file like combined_dpr_<sheet_key>.xlsx
+    in the specified output directory.
 
     Parameters:
         file_path (str): Path to the DPR Excel file.
         config (dict): Configuration dictionary from YAML.
-        output_dir (str): Directory to save the output Excel files.
+        output_dir (str): Directory to save the combined Excel output.
     """
     dpr_sheets = config["DPR_CONFIG"]["sheets"]
     os.makedirs(output_dir, exist_ok=True)
@@ -393,7 +411,7 @@ def read_dpr_sheet(file_path, config, output_dir="outputs"):
 
         df = pd.DataFrame({"Date": dates})
 
-        # Rename fields using rename_map (1-to-1)
+        # Rename fields using rename_map
         rename_map = cfg.get("rename_map", {})
         renamed_labels = {v[0]: k for k, v in rename_map.items() if len(v) == 1}
 
@@ -401,7 +419,7 @@ def read_dpr_sheet(file_path, config, output_dir="outputs"):
             column_name = renamed_labels.get(original, original)
             df[column_name] = values
 
-        # Save output
+        # Save a single combined file per sheet
         out_path = os.path.join(output_dir, f"combined_dpr_{sheet_key}.xlsx")
         df.to_excel(out_path, index=False)
         print(f"✅ Saved: {out_path}")
@@ -410,45 +428,111 @@ def read_dpr_sheet(file_path, config, output_dir="outputs"):
 
 
 
-
-def merge_dpr_and_bunker(dpr_path: str, bunker_path: str, yaml_path: str, output_path: str = "merged_combined_data.xlsx"):
+def merge_dpr_and_bunker(
+    dpr_path: str,
+    bunker_path: str,
+    yaml_path: str,
+    master_path: str = "master_combined_data.xlsx"
+):
     """
-    Merges DPR and Bunker Excel files on the 'Date' column using fixed column order from YAML config.
+    Merges DPR and Bunker Excel files on 'Date', maintains a single master workbook,
+    appends only new Date+Shift rows, and enforces presence of Date and Shift.
 
     Parameters:
         dpr_path (str): Path to the DPR Excel file.
         bunker_path (str): Path to the Bunker Excel file.
-        yaml_path (str): Path to the YAML settings file.
-        output_path (str): Path to save the merged output file.
+        yaml_path (str): Path to YAML config (for fixed_order list).
+        master_path (str): Path to the persistent master Excel.
     """
 
 
-    # Read input Excel files
-    print(f"📄 Reading DPR file: {dpr_path}")
-    dpr_df = pd.read_excel(dpr_path)
-    print(f"📄 Reading Bunker file: {bunker_path}")
+    # 2) Read new DPR & bunker data
+    dpr_df    = pd.read_excel(dpr_path)
     bunker_df = pd.read_excel(bunker_path)
+    for df in (dpr_df, bunker_df):
+        df["Date"]  = pd.to_datetime(df["Date"], errors="coerce").dt.date
 
-    # Normalize date columns
-    dpr_df["Date"] = pd.to_datetime(dpr_df["Date"], errors='coerce').dt.date
-    bunker_df["Date"] = pd.to_datetime(bunker_df["Date"], errors='coerce').dt.date
+    # 3) Combine
+    new_df = pd.merge(dpr_df, bunker_df, on="Date", how="outer")
 
-    # Merge on 'Date'
-    merged_df = pd.merge(dpr_df, bunker_df, on="Date", how="outer")
+    # 4) Enforce only rows that have both Date and any SHIFT column present
+    #    We look for any column ending in '_SHIFT'
+    shift_cols = [c for c in new_df.columns if c.endswith("_SHIFT")]
+    new_df = new_df.dropna(subset=["Date"] + shift_cols, how="all")
 
-    # Reorder columns using YAML
-    final_cols = [col for col in fixed_order if col in merged_df.columns]
-    remaining_cols = [col for col in merged_df.columns if col not in final_cols]
-    ordered_df = merged_df[final_cols + remaining_cols]
+    # 5) Reorder columns per fixed_order, push extras to end
+    cols_in_both = [c for c in fixed_order if c in new_df.columns]
+    others       = [c for c in new_df.columns if c not in cols_in_both]
+    new_df       = new_df[cols_in_both + others]
 
-    # Save to Excel
-    ordered_df.to_excel(output_path, index=False)
-    print(f"✅ Final merged file saved to: {output_path}")
+    # 6) Load existing master (if any) and filter out duplicates
+    if os.path.exists(master_path):
+        master_df = pd.read_excel(master_path)
+        # identify keys: Date + all SHIFT columns
+        key_cols   = ["Date"] + shift_cols
+        # merge-only truly new rows
+        merged = pd.merge(
+            new_df, master_df[key_cols].drop_duplicates(),
+            on=key_cols, how="left", indicator=True
+        )
+        new_only = merged[merged["_merge"]=="left_only"].drop(columns="_merge")
+        if new_only.empty:
+            print("⚠️ No new Date+Shift rows to append.")
+            return
+        updated = pd.concat([master_df, new_only], ignore_index=True)
+    else:
+        updated = new_df
+
+    # 7) Save back to master_path
+    updated.to_excel(master_path, index=False)
+    print(f"✅ Master file updated: {master_path} (added {len(updated) - len(master_df) if 'master_df' in locals() else len(updated)} new rows)")
 
 
 
 
+def merge_hourly_excel(filepath):
+    """
+    Merge DUMP_REPORT and SH_REPORT by exact DATETIME string match,
+    and write the merged result as a new/replaced sheet in the same file.
+    """
+    try:
+        print(f"📂 Reading Excel file: {filepath}")
+        xl = pd.ExcelFile(filepath)
+        sheet_names = xl.sheet_names
 
+        if len(sheet_names) < 2:
+            print("⚠️ Less than 2 sheets found.")
+            return
+
+        # Parse from row 7 (skiprows=6)
+        df_dump = xl.parse(sheet_names[0], skiprows=6)
+        df_sh = xl.parse(sheet_names[1], skiprows=6)
+
+        # Clean up headers
+        df_dump.columns = df_dump.columns.str.strip()
+        df_sh.columns = df_sh.columns.str.strip()
+
+        # Drop Unnamed columns (Excel index)
+        df_dump = df_dump.loc[:, ~df_dump.columns.str.contains("Unnamed", case=False)]
+        df_sh = df_sh.loc[:, ~df_sh.columns.str.contains("Unnamed", case=False)]
+
+        # Treat DATETIME as string
+        df_dump['DATETIME'] = df_dump['DATETIME'].astype(str).str.strip()
+        df_sh['DATETIME'] = df_sh['DATETIME'].astype(str).str.strip()
+
+        # Merge on DATETIME
+        merged_df = pd.merge(df_dump, df_sh, on='DATETIME', how='outer').sort_values('DATETIME')
+
+        # Write back into the same file as sheet "MERGED_EXACT"
+        with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+            merged_df.to_excel(writer, sheet_name="MERGED_EXACT", index=False)
+
+        print(f"✅ Merged data written to sheet: MERGED_EXACT in {filepath}")
+        return filepath
+
+    except Exception as e:
+        print(f"❌ Error during merge: {e}")
+        return None
 
 
     

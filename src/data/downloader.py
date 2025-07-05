@@ -6,10 +6,10 @@ from utils.helper_functions_downloader import (
     setup_browser_driver,
     login_dsm,
     go_to_file_station_and_download,
-    read_sheets_by_config,
+    read_rm_sheet,
     read_dpr_sheet,
     merge_dpr_and_bunker,
-    merge_hourly_excel  # ✅ Make sure this is available
+    merge_hourly_excel,
 )
 from datetime import datetime
 
@@ -34,43 +34,43 @@ if __name__ == "__main__":
     wait   = WebDriverWait(driver, DEFAULT_TIMEOUT)
 
     try:
-        login_dsm(driver, wait)
+        login_dsm(driver, wait,LOGIN_URL, USER, PASSWD)
 
         # ⬇️ Download files & get name of latest HOURLY .xlsx file
         latest_hourly_file = go_to_file_station_and_download(driver, wait, files_to_get)
 
 
-        # ⬇️ Process DPR and RM sheets
-        for fname in files_to_get:
-            path = os.path.join(download_folder, fname)
-            if not os.path.exists(path):
-                print(f"⚠️ File not found: {path} — skipping")
-                continue
+        # # ⬇️ Process DPR and RM sheets
+        # for fname in files_to_get:
+        #     path = os.path.join(download_folder, fname)
+        #     if not os.path.exists(path):
+        #         print(f"⚠️ File not found: {path} — skipping")
+        #         continue
 
-            if "DPR" in fname.upper():
-                print(f"📄 Processing DPR sheet: {fname}")
-                read_dpr_sheet(path, config=config, output_dir="outputs")
-            else:
-                print(f"📄 Processing RM sheet: {fname}")
-                read_sheets_by_config(
-                    file_path=path,
-                    RM_SHEET_CONFIG=RM_SHEET_CONFIG,
-                    start_date=START_DATE,
-                    output_dir="outputs",
-                )
+        #     if "DPR" in fname.upper():
+        #         print(f"📄 Processing DPR sheet: {fname}")
+        #         read_dpr_sheet(path, config=config, output_dir="outputs")
+        #     else:
+        #         print(f"📄 Processing RM sheet: {fname}")
+        #         read_rm_sheet(
+        #             file_path=path,
+        #             RM_SHEET_CONFIG=RM_SHEET_CONFIG,
+        #             start_date=START_DATE,
+        #             output_dir="outputs",
+        #         )
 
         # ✅ Merge DPR and Bunker outputs if needed
-        try:
-            dpr_path = os.path.join("outputs", "combined_dpr_Jun25.xlsx")
-            bunker_path = os.path.join("outputs", "combined_bunker_data.xlsx")
-            final_output = "final_combined_data.xlsx"
+        # try:
+        #     dpr_path = os.path.join("outputs", "combined_dpr_Jun25.xlsx")
+        #     bunker_path = os.path.join("outputs", "combined_bunker_data.xlsx")
+        #     final_output = "final_combined_data.xlsx"
 
-            if os.path.exists(dpr_path) and os.path.exists(bunker_path):
-                merge_dpr_and_bunker(dpr_path, bunker_path, final_output)
-            else:
-                print("⚠️ One or both files not found for merging.")
-        except Exception as e:
-            print(f"❌ Error during merging: {e}")
+        #     if os.path.exists(dpr_path) and os.path.exists(bunker_path):
+        #         merge_dpr_and_bunker(dpr_path, bunker_path, final_output)
+        #     else:
+        #         print("⚠️ One or both files not found for merging.")
+        # except Exception as e:
+        #     print(f"❌ Error during merging: {e}")
         
         # ⬇️ Merge hourly Excel files        # ⬇️ Merge hourly file if available
         if latest_hourly_file:
