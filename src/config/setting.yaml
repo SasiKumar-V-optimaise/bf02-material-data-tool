@@ -1,5 +1,20 @@
-download_folder: r"C:\Users\sasik\Downloads"
-download_filename: "11A BF-02 BUNKER  2025-26.xlsx"
+download_folder: C:\Users\sasik\Downloads
+download_filenames:
+  - "11A BF-02 BUNKER  2025-26.xlsx"
+  - "BF-02 DPR Jun'25.xlsx"
+
+
+start_date: "01-Jun-2025"
+default_timeout: 180
+
+# your DSM login & FileStation URLs and creds
+dsm:
+  url:            "https://ithelpdesk-ugml.sg4.quickconnect.to/"
+  file_station:  "https://ithelpdesk-ugml.sg4.quickconnect.to/?launchApp=SYNO.SDS.App.FileStation3.Instance&SynoToken=laNlkmozfCC0g"
+  user:           "voptim"
+  password:       "Vop@202425"
+
+
 
 RM_SHEET_CONFIG:
   COKE:
@@ -42,3 +57,164 @@ RM_SHEET_CONFIG:
     columns: "B:L"
     header_row: 2
     col_prefix: "DOLOMITE_"
+
+  PCI:
+    sheet_name: "PCI ANALYSIS -02"
+    columns: "B:G"
+    header_row: 6
+    col_prefix: "PCI_"
+
+DPR_CONFIG:
+  sheets:
+    Jun25:
+      sheet_name: "Jun'25"
+      date_row: 5
+      date_cols: [H, AM]
+      rows:
+        COKE: 26
+        Prime Nut Coke (B-13): 27
+        Yard Nut Coke (B-3): 28
+        PCI Coal: 29
+        Online+Offline Sinter: 30
+        Geomine (NET & WET): 127
+        JRS (NET & WET): 155
+        Lloyds (NET & WET): 176
+        Llyods fines oversize(+10mm) (NET & WET): 183
+        Dolomite (WET): 250
+        Quartzite (WET): 251
+      rename_map:
+        COKE_MT:
+          - COKE
+        PRIME_NUT_COKE_MT:
+          - Prime Nut Coke (B-13)
+        YARD_NUTCOKE_MT:
+          - Yard Nut Coke (B-3)
+        PCI_MT:
+          - PCI Coal
+        SINTER_SP_02_MT:
+          - Online+Offline Sinter
+        GEOMIN_MT:
+          - Geomine (NET & WET)
+        JRSVENTURES_MT:
+          - JRS (NET & WET)
+        LLOYDS_MT:
+          - Lloyds (NET & WET)
+        LLOYDS_FINES_MT:
+          - Llyods fines oversize(+10mm) (NET & WET)
+        DOLOMITE_MT:
+          - Dolomite (WET)
+        QUARTZITE_MT:
+          - Quartzite (WET)
+
+
+FIXED_COLUMN_ORDER:
+  - Date
+  - COKE_SHIFT
+  - COKE_BNK NO
+  - COKE_ONLINE/OFFLINE
+  - COKE_% TMARB
+  - COKE_%MOISTURE
+  - COKE_%Ashdb
+  - COKE_%VMdb
+  - COKE_%FCdb
+  - COKE_MT
+  - NUTCOKE_SHIFT
+  - NUTCOKE_BNK NO
+  - NUTCOKE_%TM
+  - NUTCOKE_%IM
+  - NUTCOKE_%ASH
+  - "NUTCOKE_%VM " 
+  - NUTCOKE_%FC
+  - PRIME_NUT_COKE_MT
+  - YARD_NUTCOKE_MT
+  - PCI_SHIFT
+  - PCI_%IM
+  - PCI_%Ash
+  - PCI_%VM
+  - PCI_%FC
+  - PCI_MT
+  - SINTER_SP_02_SHIFT
+  - SINTER_SP_02_%Fe(T)
+  - SINTER_SP_02_%FeO
+  - SINTER_SP_02_%SiO2
+  - SINTER_SP_02_%Al2O3
+  - SINTER_SP_02_%CaO
+  - SINTER_SP_02_%MgO
+  - SINTER_SP_02_%Na2O
+  - SINTER_SP_02_%K2O
+  - SINTER_SP_02_%P
+  - SINTER_SP_02_%MnO
+  - SINTER_SP_02_%TiO2
+  - SINTER_SP_02_BASICITY
+  - SINTER_SP_02_MT
+  - JRSVENTURES_SHIFT
+  - JRSVENTURES_BNK NO.
+  - JRSVENTURES_SORUCE
+  - JRSVENTURES_%Fe(T)
+  - JRSVENTURES_%SiO2
+  - JRSVENTURES_%Al2O3
+  - JRSVENTURES_%P
+  - JRSVENTURES_%TiO2
+  - JRSVENTURES_%Na2O
+  - JRSVENTURES_%K2O
+  - JRSVENTURES_%MnO
+  - JRSVENTURES_%CaO
+  - JRSVENTURES_%MgO
+  - JRSVENTURES_%LOI
+  - JRSVENTURES_%TM
+  - "JRSVENTURES_Δ(%LOI-%TM)"
+  - JRSVENTURES_MT
+  - LLOYDS_SHIFT
+  - LLOYDS_BNK NO.
+  - LLOYDS_SORUCE
+  - LLOYDS_%Fe(T)
+  - LLOYDS_%FeO
+  - LLOYDS_%SiO2
+  - LLOYDS_%Al2O3
+  - LLOYDS_%P
+  - LLOYDS_%TiO2
+  - LLOYDS_%Na2O
+  - LLOYDS_%K2O
+  - LLOYDS_%MnO
+  - LLOYDS_%CaO
+  - LLOYDS_%MgO
+  - LLOYDS_%LOI
+  - LLOYDS_%TM
+  - "LLOYDS_Δ(%LOI-%TM)"
+  - LLOYDS_MT
+  - LLOYDS_FINES_MT
+  - GEOMIN_SHIFT
+  - GEOMIN_BNK NO.
+  - GEOMIN_SORUCE
+  - GEOMIN_%Fe(T)
+  - GEOMIN_%SiO2
+  - GEOMIN_%Al2O3
+  - GEOMIN_%P
+  - GEOMIN_%TiO2
+  - GEOMIN_%Na2O
+  - GEOMIN_%K2O
+  - GEOMIN_%MnO
+  - GEOMIN_%CaO
+  - GEOMIN_%MgO
+  - GEOMIN_%LOI
+  - GEOMIN_%TM
+  - "GEOMIN_Δ(%LOI-%TM)"
+  - GEOMIN_MT
+  - QUARTZ_SHIFT
+  - QUARTZ_BUNKER
+  - QUARTZ_%SiO2
+  - QUARTZ_%Al2O3
+  - QUARTZ_%Fe2O3
+  - QUARTZ_%LOI
+  - QUARTZ_%TM
+  - QUARTZITE_MT
+  - DOLOMITE_SHIFT
+  - DOLOMITE_BUNKER
+  - DOLOMITE_%CaO
+  - DOLOMITE_%MgO
+  - DOLOMITE_%SiO2
+  - DOLOMITE_%Al2O3
+  - DOLOMITE_%Fe2O3
+  - DOLOMITE_%LOI
+  - DOLOMITE_T M%
+  - DOLOMITE_MT
