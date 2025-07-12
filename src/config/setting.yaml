@@ -1,220 +1,239 @@
 download_folder: C:\Users\sasik\Downloads
 download_filenames:
-  - "11A BF-02 BUNKER  2025-26.xlsx"
-  - "BF-02 DPR Jun'25.xlsx"
-
-
-start_date: "01-Jun-2025"
+- 11A BF-02 BUNKER
+- BF-02 DPR
+start_date: 11-Jul-2025
 default_timeout: 180
-
-# your DSM login & FileStation URLs and creds
 dsm:
-  url:            "https://ithelpdesk-ugml.sg4.quickconnect.to/"
-  file_station:  "https://ithelpdesk-ugml.sg4.quickconnect.to/?launchApp=SYNO.SDS.App.FileStation3.Instance&SynoToken=laNlkmozfCC0g"
-  user:           "voptim"
-  password:       "Vop@202425"
-
-
-
+  url: https://ithelpdesk-ugml.sg4.quickconnect.to/
+  file_station: 
+    https://ithelpdesk-ugml.sg4.quickconnect.to/?launchApp=SYNO.SDS.App.FileStation3.Instance&SynoToken=laNlkmozfCC0g
+  user: voptim
+  password: Vop@202425
+  hourly_url: 
+    https://ithelpdesk-ugml.sg4.quickconnect.to/index.cgi?launchApp=SYNO.SDS.App.FileStation3.Instance&launchParam=openfile%3D%252FV-Optimaise%2520Data%252FBF2%2520AUTO%2520REPORTS%252FCHARGE%2520AND%2520DUMP%252FHOURLY%252F
 RM_SHEET_CONFIG:
   COKE:
-    sheet_name: "LAM COKE"
-    columns: "B:K"
+    sheet_name: LAM COKE
+    columns: B:K
     header_row: 3
-    col_prefix: "COKE_"
+    col_prefix: COKE_
   NUT COKE:
-    sheet_name: "NUT COKE"
-    columns: "B:J"
+    sheet_name: NUT COKE
+    columns: B:J
     header_row: 2
-    col_prefix: "NUTCOKE_"
+    col_prefix: NUTCOKE_
   JRS VENTURES:
-    sheet_name: "JRS VENTURES "
-    columns: "B:S"
+    sheet_name: 'JRS VENTURES '
+    columns: B:S
     header_row: 3
-    col_prefix: "JRSVENTURES_"
+    col_prefix: JRSVENTURES_
+  NMDC DONOMALAI:
+    sheet_name: NMDC DONOMALAI
+    columns: B:R
+    header_row: 2
+    col_prefix: NMDC_
   LLOYDS CLO:
-    sheet_name: "LLOYDS CLO"
-    columns: "B:T"
+    sheet_name: LLOYDS CLO
+    columns: B:T
     header_row: 2
-    col_prefix: "LLOYDS_"
+    col_prefix: LLOYDS_
   GEOMIN CLO:
-    sheet_name: "GEOMIN CLO"
-    columns: "B:S"
+    sheet_name: GEOMIN CLO
+    columns: B:S
     header_row: 2
-    col_prefix: "GEOMIN_"
+    col_prefix: GEOMIN_
   SINTER:
-    sheet_name: "SINTER"
-    columns: "B:Q"
+    sheet_name: SINTER
+    columns: B:Q
     header_row: 2
-    col_prefix: "SINTER_SP_02_"
+    col_prefix: SINTER_SP_02_
   QUARTZ:
-    sheet_name: "QUARTZ"
-    columns: "B:J"
+    sheet_name: QUARTZ
+    columns: B:J
     header_row: 2
-    col_prefix: "QUARTZ_"
+    col_prefix: QUARTZ_
   DOLOMITE:
-    sheet_name: "DOLOMITE"
-    columns: "B:L"
+    sheet_name: DOLOMITE
+    columns: B:L
     header_row: 2
-    col_prefix: "DOLOMITE_"
-
+    col_prefix: DOLOMITE_
   PCI:
-    sheet_name: "PCI ANALYSIS -02"
-    columns: "B:G"
+    sheet_name: PCI ANALYSIS -02
+    columns: B:G
     header_row: 6
-    col_prefix: "PCI_"
-
+    col_prefix: PCI_
 DPR_CONFIG:
   sheets:
     Jun25:
-      sheet_name: "Jun'25"
+      sheet_name: Jun'25
       date_row: 5
-      date_cols: [H, AM]
+      date_cols:
+      - H
+      - AM
       rows:
-        COKE: 26
+        Onlinne+Offline+Purchase Coke: 26
         Prime Nut Coke (B-13): 27
         Yard Nut Coke (B-3): 28
         PCI Coal: 29
         Online+Offline Sinter: 30
-        Geomine (NET & WET): 127
-        JRS (NET & WET): 155
-        Lloyds (NET & WET): 176
-        Llyods fines oversize(+10mm) (NET & WET): 183
-        Dolomite (WET): 250
-        Quartzite (WET): 251
+        NMDC DONIMALAI: 162
+        Geomine industries: 127
+        JRS VENTURES: 155
+        Lloyds metal energy: 176
+        Llyods fines oversize(+10mm): 183
+        Dolomite: 250
+        Quartzite: 251
       rename_map:
         COKE_MT:
-          - COKE
+        - Onlinne+Offline+Purchase Coke
         PRIME_NUT_COKE_MT:
-          - Prime Nut Coke (B-13)
+        - Prime Nut Coke (B-13)
         YARD_NUTCOKE_MT:
-          - Yard Nut Coke (B-3)
+        - Yard Nut Coke (B-3)
         PCI_MT:
-          - PCI Coal
+        - PCI Coal
         SINTER_SP_02_MT:
-          - Online+Offline Sinter
+        - Online+Offline Sinter
         GEOMIN_MT:
-          - Geomine (NET & WET)
+        - Geomine industries
         JRSVENTURES_MT:
-          - JRS (NET & WET)
+        - JRS VENTURES
         LLOYDS_MT:
-          - Lloyds (NET & WET)
+        - Lloyds metal energy
         LLOYDS_FINES_MT:
-          - Llyods fines oversize(+10mm) (NET & WET)
+        - Llyods fines oversize(+10mm)
         DOLOMITE_MT:
-          - Dolomite (WET)
+        - Dolomite
         QUARTZITE_MT:
-          - Quartzite (WET)
-
-
+        - Quartzite
+        NMDC_MT:
+        - NMDC DONIMALAI
 FIXED_COLUMN_ORDER:
-  - Date
-  - COKE_SHIFT
-  - COKE_BNK NO
-  - COKE_ONLINE/OFFLINE
-  - COKE_% TMARB
-  - COKE_%MOISTURE
-  - COKE_%Ashdb
-  - COKE_%VMdb
-  - COKE_%FCdb
-  - COKE_MT
-  - NUTCOKE_SHIFT
-  - NUTCOKE_BNK NO
-  - NUTCOKE_%TM
-  - NUTCOKE_%IM
-  - NUTCOKE_%ASH
-  - "NUTCOKE_%VM " 
-  - NUTCOKE_%FC
-  - PRIME_NUT_COKE_MT
-  - YARD_NUTCOKE_MT
-  - PCI_SHIFT
-  - PCI_%IM
-  - PCI_%Ash
-  - PCI_%VM
-  - PCI_%FC
-  - PCI_MT
-  - SINTER_SP_02_SHIFT
-  - SINTER_SP_02_%Fe(T)
-  - SINTER_SP_02_%FeO
-  - SINTER_SP_02_%SiO2
-  - SINTER_SP_02_%Al2O3
-  - SINTER_SP_02_%CaO
-  - SINTER_SP_02_%MgO
-  - SINTER_SP_02_%Na2O
-  - SINTER_SP_02_%K2O
-  - SINTER_SP_02_%P
-  - SINTER_SP_02_%MnO
-  - SINTER_SP_02_%TiO2
-  - SINTER_SP_02_BASICITY
-  - SINTER_SP_02_MT
-  - JRSVENTURES_SHIFT
-  - JRSVENTURES_BNK NO.
-  - JRSVENTURES_SORUCE
-  - JRSVENTURES_%Fe(T)
-  - JRSVENTURES_%SiO2
-  - JRSVENTURES_%Al2O3
-  - JRSVENTURES_%P
-  - JRSVENTURES_%TiO2
-  - JRSVENTURES_%Na2O
-  - JRSVENTURES_%K2O
-  - JRSVENTURES_%MnO
-  - JRSVENTURES_%CaO
-  - JRSVENTURES_%MgO
-  - JRSVENTURES_%LOI
-  - JRSVENTURES_%TM
-  - "JRSVENTURES_Δ(%LOI-%TM)"
-  - JRSVENTURES_MT
-  - LLOYDS_SHIFT
-  - LLOYDS_BNK NO.
-  - LLOYDS_SORUCE
-  - LLOYDS_%Fe(T)
-  - LLOYDS_%FeO
-  - LLOYDS_%SiO2
-  - LLOYDS_%Al2O3
-  - LLOYDS_%P
-  - LLOYDS_%TiO2
-  - LLOYDS_%Na2O
-  - LLOYDS_%K2O
-  - LLOYDS_%MnO
-  - LLOYDS_%CaO
-  - LLOYDS_%MgO
-  - LLOYDS_%LOI
-  - LLOYDS_%TM
-  - "LLOYDS_Δ(%LOI-%TM)"
-  - LLOYDS_MT
-  - LLOYDS_FINES_MT
-  - GEOMIN_SHIFT
-  - GEOMIN_BNK NO.
-  - GEOMIN_SORUCE
-  - GEOMIN_%Fe(T)
-  - GEOMIN_%SiO2
-  - GEOMIN_%Al2O3
-  - GEOMIN_%P
-  - GEOMIN_%TiO2
-  - GEOMIN_%Na2O
-  - GEOMIN_%K2O
-  - GEOMIN_%MnO
-  - GEOMIN_%CaO
-  - GEOMIN_%MgO
-  - GEOMIN_%LOI
-  - GEOMIN_%TM
-  - "GEOMIN_Δ(%LOI-%TM)"
-  - GEOMIN_MT
-  - QUARTZ_SHIFT
-  - QUARTZ_BUNKER
-  - QUARTZ_%SiO2
-  - QUARTZ_%Al2O3
-  - QUARTZ_%Fe2O3
-  - QUARTZ_%LOI
-  - QUARTZ_%TM
-  - QUARTZITE_MT
-  - DOLOMITE_SHIFT
-  - DOLOMITE_BUNKER
-  - DOLOMITE_%CaO
-  - DOLOMITE_%MgO
-  - DOLOMITE_%SiO2
-  - DOLOMITE_%Al2O3
-  - DOLOMITE_%Fe2O3
-  - DOLOMITE_%LOI
-  - DOLOMITE_T M%
-  - DOLOMITE_MT
+- Date
+- COKE_SHIFT
+- COKE_BNK NO
+- COKE_ONLINE/OFFLINE
+- COKE_% TMARB
+- COKE_%MOISTURE
+- COKE_%Ashdb
+- COKE_%VMdb
+- COKE_%FCdb
+- COKE_MT
+- NUTCOKE_SHIFT
+- NUTCOKE_BNK NO
+- NUTCOKE_%TM
+- NUTCOKE_%IM
+- NUTCOKE_%ASH
+- 'NUTCOKE_%VM '
+- NUTCOKE_%FC
+- PRIME_NUT_COKE_MT
+- YARD_NUTCOKE_MT
+- PCI_SHIFT
+- PCI_%IM
+- PCI_%Ash
+- PCI_%VM
+- PCI_%FC
+- PCI_MT
+- SINTER_SP_02_SHIFT
+- SINTER_SP_02_%Fe(T)
+- SINTER_SP_02_%FeO
+- SINTER_SP_02_%SiO2
+- SINTER_SP_02_%Al2O3
+- SINTER_SP_02_%CaO
+- SINTER_SP_02_%MgO
+- SINTER_SP_02_%Na2O
+- SINTER_SP_02_%K2O
+- SINTER_SP_02_%P
+- SINTER_SP_02_%MnO
+- SINTER_SP_02_%TiO2
+- SINTER_SP_02_BASICITY
+- SINTER_SP_02_MT
+- NMDC_SHIFT
+- NMDC_BNK NO
+- NMDC_SORUCE
+- NMDC_%Fe(T)
+- NMDC_%SiO2
+- NMDC_%Al2O3
+- NMDC_%P
+- NMDC_%TiO2
+- NMDC_%Na2O
+- NMDC_%K2O
+- NMDC_%MnO
+- NMDC_%CaO
+- NMDC_%MgO
+- NMDC_%LOI
+- NMDC_%TM
+- NMDC_Δ(%LOI-%TM)
+- NMDC_MT
+- JRSVENTURES_SHIFT
+- JRSVENTURES_BNK NO.
+- JRSVENTURES_SORUCE
+- JRSVENTURES_%Fe(T)
+- JRSVENTURES_%SiO2
+- JRSVENTURES_%Al2O3
+- JRSVENTURES_%P
+- JRSVENTURES_%TiO2
+- JRSVENTURES_%Na2O
+- JRSVENTURES_%K2O
+- JRSVENTURES_%MnO
+- JRSVENTURES_%CaO
+- JRSVENTURES_%MgO
+- JRSVENTURES_%LOI
+- JRSVENTURES_%TM
+- JRSVENTURES_Δ(%LOI-%TM)
+- JRSVENTURES_MT
+- LLOYDS_SHIFT
+- LLOYDS_BNK NO.
+- LLOYDS_SORUCE
+- LLOYDS_%Fe(T)
+- LLOYDS_%FeO
+- LLOYDS_%SiO2
+- LLOYDS_%Al2O3
+- LLOYDS_%P
+- LLOYDS_%TiO2
+- LLOYDS_%Na2O
+- LLOYDS_%K2O
+- LLOYDS_%MnO
+- LLOYDS_%CaO
+- LLOYDS_%MgO
+- LLOYDS_%LOI
+- LLOYDS_%TM
+- LLOYDS_Δ(%LOI-%TM)
+- LLOYDS_MT
+- LLOYDS_FINES_MT
+- GEOMIN_SHIFT
+- GEOMIN_BNK NO.
+- GEOMIN_SORUCE
+- GEOMIN_%Fe(T)
+- GEOMIN_%SiO2
+- GEOMIN_%Al2O3
+- GEOMIN_%P
+- GEOMIN_%TiO2
+- GEOMIN_%Na2O
+- GEOMIN_%K2O
+- GEOMIN_%MnO
+- GEOMIN_%CaO
+- GEOMIN_%MgO
+- GEOMIN_%LOI
+- GEOMIN_%TM
+- GEOMIN_Δ(%LOI-%TM)
+- GEOMIN_MT
+- QUARTZ_SHIFT
+- QUARTZ_BUNKER
+- QUARTZ_%SiO2
+- QUARTZ_%Al2O3
+- QUARTZ_%Fe2O3
+- QUARTZ_%LOI
+- QUARTZ_%TM
+- QUARTZITE_MT
+- DOLOMITE_SHIFT
+- DOLOMITE_BUNKER
+- DOLOMITE_%CaO
+- DOLOMITE_%MgO
+- DOLOMITE_%SiO2
+- DOLOMITE_%Al2O3
+- DOLOMITE_%Fe2O3
+- DOLOMITE_%LOI
+- DOLOMITE_T M%
+- DOLOMITE_MT
