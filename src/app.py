@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import glob
 from config.loader import load_config
@@ -23,16 +23,23 @@ def parse_args():
     parser.add_argument("--today", action="store_true",
                         help="Use today’s date as run date")
     parser.add_argument("--rundate", type=str,
-                        help="Run for a specific date (format: DD-MM-YYYY)")
+                        help="Run for a specific date or range (format: DD-MM-YYYY or DD-MM-YYYY to DD-MM-YYYY)")
     return parser.parse_args()
 
 
-def get_run_date(args):
+def get_run_dates(args):
     if args.today:
-        return datetime.today().strftime("%d-%b-%Y")
+        return [datetime.today().strftime("%d-%b-%Y")]
     elif args.rundate:
-        dt = datetime.strptime(args.rundate, "%d-%m-%Y")
-        return dt.strftime("%d-%b-%Y")
+        if "to" in args.rundate:
+            start_str, end_str = map(str.strip, args.rundate.split("to"))
+            start = datetime.strptime(start_str, "%d-%m-%Y")
+            end = datetime.strptime(end_str, "%d-%m-%Y")
+            dates = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+            return [dt.strftime("%d-%b-%Y") for dt in dates]
+        else:
+            dt = datetime.strptime(args.rundate, "%d-%m-%Y")
+            return [dt.strftime("%d-%b-%Y")]
     else:
         raise ValueError("You must specify either --today or --rundate")
 
@@ -46,78 +53,80 @@ def find_latest_matching_file(folder, prefix):
     return matches[0]
 
 
-def run_modes(modes, run_date, download=False):
+def run_modes(modes, run_dates, download=False):
     config = load_config()
     RM_SHEET_CONFIG = config.get("RM_SHEET_CONFIG", {})
     output_dir = "outputs"
     os.makedirs(output_dir, exist_ok=True)
 
-    # Track skipped downloads
     skipped_downloads = set()
+    charge_file = None
 
-    if download:
-        print("\n🌐 Logging into DSM and downloading files...")
+    # If any download is needed
+    if download or "charge" in modes:
+        print("\n🌐 Launching browser for DSM file download...")
         driver = setup_browser_driver()
         wait = WebDriverWait(driver, config.get("default_timeout", 180))
+
+        # Login to DSM
         login_dsm(driver, wait, config["dsm"]["url"], config["dsm"]["user"], config["dsm"]["password"])
+
+        # Only use first run_date for charge
+        rundate_obj = datetime.strptime(run_dates[0], "%d-%b-%Y")
+        charge_filename = f"CHARGE_AND_DUMP_REPORT_{rundate_obj.day}_{rundate_obj.month}_{rundate_obj.year}.xlsx"
+
+        # Call download logic (hourly section only downloads this file)
         skipped_downloads = go_to_file_station_and_download(
-            driver, wait, config["download_filenames"],
-            config["dsm"]["file_station"], config["dsm"]["hourly_url"],
-            selected_modes=modes
+            driver, wait,
+            config["download_filenames"],
+            config["dsm"]["file_station"],
+            config["dsm"]["hourly_url"],
+            selected_modes=modes,
+            run_date=run_dates[0],
+            target_filename=charge_filename
         ) or set()
+
         driver.quit()
 
+    # For RM and DPR, look in downloaded folder
     download_folder = config["download_folder"]
     dpr_file = None if "BF-02 DPR" in skipped_downloads else find_latest_matching_file(download_folder, "BF-02 DPR")
     rm_file = None if "11A BF-02 BUNKER" in skipped_downloads else find_latest_matching_file(download_folder, "11A BF-02 BUNKER")
-    charge_file = None if "charge_and_dump" in skipped_downloads else find_latest_matching_file(download_folder, "charge_and_dump")
+    charge_file = None if "charge_and_dump" in skipped_downloads else find_latest_matching_file(download_folder, "CHARGE_AND_DUMP_REPORT_")
 
-    if "rm" in modes:
-        if not rm_file:
-            print("❌ Bunker (RM) file not found in download folder or skipped.")
-        else:
-            print(f"📦 Processing RM sheet: {rm_file}")
-            read_rm_sheet(
-                file_path=rm_file,
-                RM_SHEET_CONFIG=RM_SHEET_CONFIG,
-                start_date=run_date,
-                output_dir=output_dir
-            )
+    for run_date in run_dates:
+        # Process RM
+        if "rm" in modes:
+            if not rm_file:
+                print("❌ Bunker (RM) file not found in download folder or skipped.")
+            else:
+                print(f"📦 Processing RM sheet for {run_date}")
+                read_rm_sheet(
+                    file_path=rm_file,
+                    RM_SHEET_CONFIG=RM_SHEET_CONFIG,
+                    start_date=run_date,
+                    output_dir=output_dir
+                )
 
-    if "dpr" in modes:
-        if not dpr_file:
-            print("❌ DPR file not found in download folder or skipped.")
-        else:
-            print(f"📊 Processing DPR sheet: {dpr_file}")
-            update_dpr_config_from_excel(
-                dpr_file,
-                os.path.join("src", "config", "setting.yaml"),
-                run_date  # ✅ pass the run date here
-            )
-            read_dpr_sheet(
-                file_path=dpr_file,
-                config=config,
-                start_date=run_date,
-                output_dir=output_dir
-            )
+        # Process DPR
+        if "dpr" in modes:
+            if not dpr_file:
+                print("❌ DPR file not found in download folder or skipped.")
+            else:
+                print(f"📊 Processing DPR sheet for {run_date}")
+                update_dpr_config_from_excel(
+                    dpr_file,
+                    os.path.join("src", "config", "setting.yaml"),
+                    run_date
+                )
+                read_dpr_sheet(
+                    file_path=dpr_file,
+                    config=config,
+                    start_date=run_date,
+                    output_dir=output_dir
+                )
 
-    if "rm" in modes and "dpr" in modes:
-        dpr_path = os.path.join(output_dir, "combined_dpr_data.xlsx")
-        bunker_path = os.path.join(output_dir, "combined_bunker_data.xlsx")
-        yaml_path = os.path.join("src", "config", "setting.yaml")
-        final_output = "final_combined_data.xlsx"
-
-        if os.path.exists(dpr_path) and os.path.exists(bunker_path):
-            print(f"🔗 Merging: {os.path.basename(dpr_path)} + {os.path.basename(bunker_path)}")
-            merge_dpr_and_bunker(
-                dpr_path=dpr_path,
-                bunker_path=bunker_path,
-                yaml_path=yaml_path,
-                master_path=final_output
-            )
-        else:
-            print("⚠️ Cannot merge — one or both inputs missing.")
-
+    # Merge charge report
     if "charge" in modes:
         if not charge_file:
             print("❌ Charge report not found or skipped.")
@@ -135,7 +144,7 @@ if __name__ == "__main__":
         else:
             modes = [m.strip() for m in modes_raw.split(",")]
 
-        run_date = get_run_date(args)
-        run_modes(modes, run_date, download=args.today)
+        run_dates = get_run_dates(args)
+        run_modes(modes, run_dates, download=args.today)
     except Exception as e:
         print(f"❌ Error: {e}")

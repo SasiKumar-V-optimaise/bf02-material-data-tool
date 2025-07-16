@@ -2,6 +2,7 @@ from config.loader import load_config
 from datetime import datetime
 from pathlib import Path
 import os
+import sys
 import logging
 import time
 import pandas as pd
@@ -23,6 +24,8 @@ import json
 from ruamel.yaml import YAML
 from calendar import month_abbr
 import unicodedata
+from selenium.webdriver.common.action_chains import ActionChains
+
 
 log = logging.getLogger("root")
 project_root = Path(__file__).resolve().parents[2]
@@ -123,29 +126,16 @@ def parse_datetime(date_str):
 
 
 
-def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY_URL, selected_modes):
-    """
-    Navigate to File Station and:
-    1. Download files relevant to selected_modes from the root directory if modified date changed.
-    2. If mode includes "charge", go to HOURLY folder and download the latest .xlsx file if modified.
 
-    Returns:
-        skipped_files: set of file prefixes skipped from download
-    """
-    import re
-    import time
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.common.action_chains import ActionChains
-    from utils.helper_functions_downloader import load_metadata, save_metadata, parse_datetime
-
+def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY_URL, selected_modes, run_date, target_filename=None):
     def normalize(s):
         return re.sub(r'\s+', ' ', s).strip().lower()
 
     previous_metadata = load_metadata()
     skipped_files = set()
+    download_dir = os.path.expanduser("~/Downloads")
 
-    # STEP 1: Navigate to ROOT
-    print("📁 Navigating to File Station root…")
+    # STEP 1: ROOT folder download
     driver.get(ROOT_URL)
     wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
     time.sleep(3)
@@ -154,7 +144,7 @@ def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY
         wait.until(lambda d: d.find_elements(By.CLASS_NAME, "x-grid3-row"))
         time.sleep(2)
     except:
-        print("⚠️ File list did not appear — exiting.")
+        print("⚠️ File list did not appear.")
         return skipped_files
 
     file_rows = driver.execute_script("""
@@ -171,7 +161,6 @@ def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY
             };
         });
     """)
-    print(f"📋 {len(file_rows)} items found in root directory.")
 
     mode_file_map = {
         "rm": "11A BF-02 BUNKER",
@@ -181,122 +170,136 @@ def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY
     for mode in ["rm", "dpr"]:
         if mode not in selected_modes:
             continue
+
         fname = mode_file_map[mode]
-        print(f"🔍 Looking for '{fname}'...")
-        matched_row = None
-        for row in file_rows:
-            if normalize(fname) in normalize(row["name"]):
-                matched_row = row
-                break
+        matched_row = next((row for row in file_rows if normalize(fname) in normalize(row["name"])), None)
 
         if not matched_row:
-            print(f"⚠️ '{fname}' not found in visible list.")
+            print(f"⚠️ '{fname}' not found.")
             skipped_files.add(fname)
             continue
 
         try:
             row_element = matched_row["element"]
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", row_element)
-            time.sleep(1)
-
             current_modified = matched_row["modified"]
-            base_name = normalize(fname)
-
-            matched_key = next((k for k in previous_metadata if base_name in normalize(k)), None)
-            previous_modified = previous_metadata.get(matched_key) if matched_key else None
-
-            print(f"📄 Found: {matched_row['name']} | 🕒 Modified: {current_modified} | 📏 Size: {matched_row['size']}")
             current_dt = parse_datetime(current_modified)
-            previous_dt = parse_datetime(previous_modified)
 
+            previous_dt = parse_datetime(previous_metadata.get(matched_row["name"]))
             if not previous_dt or current_dt != previous_dt:
-                print(f"📥 Change detected or new file → Downloading '{matched_row['name']}'...")
+                print(f"📥 Downloading {matched_row['name']}...")
                 ActionChains(driver).move_to_element(row_element).double_click(row_element).perform()
-                time.sleep(5)
-                print(f"✅ Download complete for '{matched_row['name']}'")
-                if current_dt:
-                    previous_metadata[matched_row["name"]] = current_dt.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                print(f"⏩ No change for '{matched_row['name']}' — skipping download.")
-                skipped_files.add(fname)
 
+                print("⏳ Waiting 10 seconds for download to complete...")
+                time.sleep(0)
+
+                previous_metadata[matched_row["name"]] = current_dt.strftime("%Y-%m-%d %H:%M:%S")
+                print(f"✅ Done: {matched_row['name']}")
+            else:
+                print(f"⏩ No update for '{matched_row['name']}'")
+                skipped_files.add(fname)
         except Exception as e:
-            print(f"⚠️ Couldn’t download '{fname}': {e}")
+            print(f"❌ Error downloading {fname}: {e}")
             skipped_files.add(fname)
 
-    # STEP 2: Go to HOURLY folder
+
+    # Step 2: HOURLY file based on run_date
+
+
     if "charge" in selected_modes:
-        print("📁 Navigating to HOURLY folder…")
+        print("📁 Navigating directly to HOURLY folder…")
         driver.get(HOURLY_URL)
         wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
         time.sleep(5)
 
         try:
-            wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, "div.x-grid3-row"))
-            hdr = wait.until(lambda d: d.find_element(By.XPATH, "//div[contains(@class,'webfm-column-header-text') and text()='Modified Time']"))
-            hdr.click()
-            time.sleep(1)
-            print("✅ Sorted descending.")
-        except:
-            print("⚠️ Could not sort by Modified Time (might already be sorted).")
+            scroll_panel = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "x-grid3-scroller")))
+        except Exception:
+            print("❌ Could not locate scroll panel.")
+            skipped_files.add("charge_and_dump")
+            return skipped_files
 
-        try:
-            rows = driver.find_elements(By.CSS_SELECTOR, "div.x-grid3-row")
-            latest_hourly = None
+        # Build target filename
+        is_today_mode = "--today" in sys.argv
+        today_dt = datetime.today() if is_today_mode else datetime.strptime(run_date, "%d-%b-%Y")
+        target_filename = f"CHARGE_AND_DUMP_REPORT_{today_dt.day}_{today_dt.month}_{today_dt.year}.xlsx"
+        print(f"🔍 Looking for file: {target_filename}")
+
+        # Pull metadata if in --today mode
+        hourly_meta = previous_metadata.get("HOURLY_REPORT", {}) if is_today_mode else {}
+        prev_name = hourly_meta.get("name")
+        prev_modified = hourly_meta.get("modified")
+        prev_dt = parse_datetime(prev_modified) if prev_modified else None
+
+        seen_files = set()
+        found = False
+        scroll_attempts = 0
+        max_scroll_attempts = 50
+
+        while not found and scroll_attempts < max_scroll_attempts:
+            rows = driver.find_elements(By.CLASS_NAME, "x-grid3-row")
 
             for row in rows:
-                cells = row.find_elements(By.CSS_SELECTOR, "div.x-grid3-cell-inner")
-                if len(cells) < 4:
+                try:
+                    cell = row.find_element(By.CLASS_NAME, "x-grid3-cell-inner")
+                    file_name = cell.text.strip()
+                    if file_name in seen_files:
+                        continue
+                    seen_files.add(file_name)
+
+                    if file_name == target_filename:
+                        cells = row.find_elements(By.CLASS_NAME, "x-grid3-cell-inner")
+                        modified_str = cells[3].text.strip()
+                        try:
+                            file_modified_dt = parse_datetime(modified_str)
+                        except:
+                            file_modified_dt = datetime.now()
+
+                        if is_today_mode and prev_name == target_filename and prev_dt:
+                            if file_modified_dt <= prev_dt:
+                                print(f"⏩ No update in HOURLY file since last download at {prev_modified}")
+                                skipped_files.add("charge_and_dump")
+                                return skipped_files
+
+                        print(f"📄 Found file: {file_name} — preparing to download…")
+                        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", row)
+                        time.sleep(1)
+
+                        ActionChains(driver).move_to_element(row).pause(0.5).double_click(row).perform()
+
+                        try:
+                            WebDriverWait(driver, 10).until(
+                                EC.presence_of_element_located((By.CLASS_NAME, "x-window-dlg"))
+                            )
+                            print("✅ Download confirmation popup detected.")
+                        except:
+                            print("⚠️ No popup appeared — assuming file is downloading.")
+
+                        print("⏳ Waiting 10 seconds for download to complete...")
+                        time.sleep(10)
+                        found = True
+
+                        if is_today_mode:
+                            previous_metadata["HOURLY_REPORT"] = {
+                                "name": target_filename,
+                                "modified": file_modified_dt.strftime("%Y-%m-%d %H:%M:%S")
+                            }
+                            save_metadata(previous_metadata)
+
+                        break
+                except Exception as e:
+                    print(f"⚠️ Row error: {e}")
                     continue
-                file_name = cells[0].text.strip()
-                modified_str = cells[3].text.strip()
 
-                if not file_name.lower().startswith("charge_and_dump_report") or not file_name.endswith(".xlsx"):
-                    continue
+            if not found:
+                ActionChains(driver).move_to_element(scroll_panel).click().send_keys(Keys.PAGE_DOWN).perform()
+                time.sleep(1.5)
+                scroll_attempts += 1
 
-                latest_hourly = {
-                    "name": file_name,
-                    "modified": modified_str
-                }
-                break
-
-            if not latest_hourly:
-                print("⚠️ No HOURLY .xlsx file found.")
-                skipped_files.add("charge_and_dump")
-            else:
-                file_name = latest_hourly["name"]
-                modified = latest_hourly["modified"]
-
-                current_dt = parse_datetime(modified)
-                previous_hourly = previous_metadata.get("HOURLY_REPORT", {})
-                previous_dt = parse_datetime(previous_hourly.get("modified")) if isinstance(previous_hourly, dict) else parse_datetime(previous_hourly)
-
-                if not previous_dt or current_dt != previous_dt:
-                    rows = driver.find_elements(By.CSS_SELECTOR, "div.x-grid3-row")
-                    for row in rows:
-                        cells = row.find_elements(By.CSS_SELECTOR, "div.x-grid3-cell-inner")
-                        if len(cells) < 4:
-                            continue
-                        if cells[0].text.strip() == file_name:
-                            ActionChains(driver).move_to_element(row).double_click(row).perform()
-                            break
-                    time.sleep(5)
-                    print(f"✅ Download triggered for HOURLY file: {file_name}")
-                    previous_metadata["HOURLY_REPORT"] = {
-                        "name": file_name,
-                        "modified": current_dt.strftime("%Y-%m-%d %H:%M:%S")
-                    }
-                else:
-                    print(f"⏩ HOURLY file '{file_name}' unchanged — skipping download.")
-                    skipped_files.add("charge_and_dump")
-
-        except Exception as e:
-            print(f"⚠️ Error in HOURLY section: {e}")
+        if not found:
+            print(f"❌ File {target_filename} not found after {scroll_attempts} scroll attempts.")
             skipped_files.add("charge_and_dump")
 
-    save_metadata(previous_metadata)
     return skipped_files
-
 
 
 
@@ -378,6 +381,7 @@ def update_dpr_config_from_excel(excel_path, yaml_path, run_date):
 
 
 
+
 def read_rm_sheet(
     file_path: str,
     RM_SHEET_CONFIG: dict,
@@ -391,12 +395,18 @@ def read_rm_sheet(
     Parameters:
         file_path (str): Path to the Excel file.
         RM_SHEET_CONFIG (dict): Configuration for reading sheets.
-        start_date (str): Only include rows on/after this date (format: "dd-MMM-yyyy").
+        start_date (str or list): Single date (dd-MMM-yyyy) or list of dates.
         output_dir (str): Directory to save the combined Excel file.
     """
+
     print(f"\n📄 Reading Excel file: {file_path}")
-    start_dt = datetime.strptime(start_date, "%d-%b-%Y").date()
-    print(f"   ↪️ Including rows on/after {start_dt.isoformat()}")
+
+    if isinstance(start_date, list):
+        date_list = [datetime.strptime(d, "%d-%b-%Y").date() for d in start_date]
+        print(f"   ↪️ Including rows for {len(date_list)} dates: {date_list[0]} to {date_list[-1]}")
+    else:
+        date_list = [datetime.strptime(start_date, "%d-%b-%Y").date()]
+        print(f"   ↪️ Including rows with DATE == {date_list[0]}")
 
     os.makedirs(output_dir, exist_ok=True)
     combined_path = os.path.join(output_dir, "combined_bunker_data.xlsx")
@@ -460,22 +470,21 @@ def read_rm_sheet(
             else:
                 print("   ⚠️  No SINTER averages")
 
-        # Filter by date and ensure DATE and SHIFT are not missing
+        # Filter by date
         if "DATE" in df.columns and "SHIFT" in df.columns:
             df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce").dt.date
             df["SHIFT"] = df["SHIFT"].astype(str).str.strip().replace({"": pd.NA, "nan": pd.NA, "NaN": pd.NA})
-            
+
             before = len(df)
             df = df[df["DATE"].notna() & df["SHIFT"].notna()]
-            df = df[df["DATE"] == start_dt].reset_index(drop=True)
-            
-            print(f"   ↪️  Kept {len(df)}/{before} rows with DATE == {start_dt}")
+            df = df[df["DATE"].isin(date_list)].reset_index(drop=True)
+
+            print(f"   ↪️  Kept {len(df)}/{before} rows matching target dates")
         else:
             print("   ⚠️  DATE and SHIFT columns missing — skipping this sheet")
             continue
 
-
-        # Prefix columns and collect
+        # Prefix columns
         df.columns = [prefix + str(c) for c in df.columns]
 
         if not df.empty:
@@ -484,7 +493,6 @@ def read_rm_sheet(
         else:
             print(f"   ❌  {key}: no valid data")
             print(f"📂 Reading RM Excel file: {file_path}")
-
 
     if not parts:
         print("⚠️  No valid data combined — exiting.")
@@ -499,7 +507,6 @@ def read_rm_sheet(
         combined = combined.drop(columns=date_cols)
         combined = combined[["Date"] + [c for c in combined.columns if c != "Date"]]
 
-    # Save to output directory
     combined.to_excel(combined_path, index=False)
     print(f"\n✅  Final combined data written → {combined_path}")
 
@@ -609,71 +616,6 @@ def read_dpr_sheet(
     final_df.to_excel(out_path, index=False)
     print(f"\n✅ Final DPR data written → {out_path}")
 
-
-
-def merge_dpr_and_bunker(
-    dpr_path: str,
-    bunker_path: str,
-    yaml_path: str,
-    master_path: str = "master_combined_data.xlsx"
-):
-    """
-    Merges DPR and Bunker Excel files on 'Date', overwrites the master Excel file with the new data.
-    """
-
-    # 1) Load FIXED_COLUMN_ORDER from YAML
-    yaml = YAML()
-    yaml.preserve_quotes = True
-    with open(yaml_path, "r") as f:
-        config = yaml.load(f)
-    fixed_order = config.get("FIXED_COLUMN_ORDER", [])
-
-    # 2) Read and process both inputs
-    dpr_df = pd.read_excel(dpr_path)
-    bunker_df = pd.read_excel(bunker_path)
-
-    for df in (dpr_df, bunker_df):
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.date
-
-    # 3) Merge both on Date
-    new_df = pd.merge(dpr_df, bunker_df, on="Date", how="outer")
-
-    # 4) Filter only rows where Date and at least one _SHIFT column is present
-    shift_cols = [c for c in new_df.columns if c.endswith("_SHIFT")]
-    new_df = new_df.dropna(subset=["Date"] + shift_cols, how="all")
-
-    # ✅ Normalize column names and fix malformed Unicode
-    def normalize_col(c):
-        c = str(c).replace("Î”", "Δ")  # Fix bad encoding
-        return unicodedata.normalize("NFKC", c.strip())
-
-    new_df.columns = [normalize_col(c) for c in new_df.columns]
-    fixed_order = [normalize_col(c) for c in fixed_order]
-
-    # ✅ Drop duplicate columns if any
-    new_df = new_df.loc[:, ~new_df.columns.duplicated()]
-
-    # Optional: Warn about FIXED_COLUMN_ORDER fields not found
-    missing_cols = [col for col in fixed_order if col not in new_df.columns]
-    if missing_cols:
-        print("⚠️ These FIXED_COLUMN_ORDER columns were not found in data:")
-        for col in missing_cols:
-            print(f"  - {col}")
-
-    # 5) Column ordering
-    cols_in_both = [col for col in fixed_order if col in new_df.columns]
-    extras = [col for col in new_df.columns if col not in cols_in_both]
-    new_df = new_df[cols_in_both + extras]
-
-    # 6) Ensure all fixed columns exist
-    for col in fixed_order:
-        if col not in new_df.columns:
-            new_df[col] = pd.NA
-    new_df = new_df[fixed_order + [c for c in new_df.columns if c not in fixed_order]]
-
-    # 7) Overwrite master Excel file
-    new_df.to_excel(master_path, index=False)
-    print(f"✅ Master file OVERWRITTEN: {master_path} (total rows: {len(new_df)})")
 
 
 
