@@ -2,14 +2,12 @@ download_folder: C:\Users\sasik\Downloads
 download_filenames:
 - 11A BF-02 BUNKER
 - BF-02 DPR
-
 download_filenames_map:
-  rm: "11A BF-02 BUNKER"
-  dpr: "BF-02 DPR"
-
+  rm: 11A BF-02 BUNKER
+  dpr: BF-02 DPR
 start_date: 11-Jul-2025
 default_timeout: 180
-dsm:
+eml:
   url: https://ithelpdesk-ugml.sg4.quickconnect.to/
   file_station: 
     https://ithelpdesk-ugml.sg4.quickconnect.to/?launchApp=SYNO.SDS.App.FileStation3.Instance&SynoToken=laNlkmozfCC0g
@@ -77,7 +75,9 @@ DPR_CONFIG:
       - H
       - AM
       rows:
-        Onlinne+Offline+Purchase Coke: 26
+        Total Coke: 288
+        Coke Online - EML: 280
+        Total purchase coke: 284
         Prime Nut Coke (B-13): 27
         Yard Nut Coke (B-3): 28
         PCI Coal: 29
@@ -90,8 +90,10 @@ DPR_CONFIG:
         Dolomite: 250
         Quartzite: 251
       rename_map:
-        COKE_MT:
-        - Onlinne+Offline+Purchase Coke
+        TOTAL_COKE_MT:
+        - Total Coke
+        COKE_OFFLINE_MT:
+        - Total purchase coke
         PRIME_NUT_COKE_MT:
         - Prime Nut Coke (B-13)
         YARD_NUTCOKE_MT:

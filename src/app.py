@@ -2,14 +2,14 @@ import argparse
 from datetime import datetime, timedelta
 import os
 import glob
+import pandas as pd
 from config.loader import load_config
 from utils.helper_functions_downloader import (
     read_rm_sheet,
     read_dpr_sheet,
-    merge_dpr_and_bunker,
     merge_hourly_excel,
     setup_browser_driver,
-    login_dsm,
+    login_eml,
     go_to_file_station_and_download,
     update_dpr_config_from_excel
 )
@@ -64,12 +64,12 @@ def run_modes(modes, run_dates, download=False):
 
     # If any download is needed
     if download or "charge" in modes:
-        print("\n🌐 Launching browser for DSM file download...")
+        print("\n🌐 Launching browser for EML file download...")
         driver = setup_browser_driver()
         wait = WebDriverWait(driver, config.get("default_timeout", 180))
 
         # Login to DSM
-        login_dsm(driver, wait, config["dsm"]["url"], config["dsm"]["user"], config["dsm"]["password"])
+        login_eml(driver, wait, config["eml"]["url"], config["eml"]["user"], config["eml"]["password"])
 
         # Only use first run_date for charge
         rundate_obj = datetime.strptime(run_dates[0], "%d-%b-%Y")
@@ -79,8 +79,8 @@ def run_modes(modes, run_dates, download=False):
         skipped_downloads = go_to_file_station_and_download(
             driver, wait,
             config["download_filenames"],
-            config["dsm"]["file_station"],
-            config["dsm"]["hourly_url"],
+            config["eml"]["file_station"],
+            config["eml"]["hourly_url"],
             selected_modes=modes,
             run_date=run_dates[0],
             target_filename=charge_filename
@@ -94,37 +94,57 @@ def run_modes(modes, run_dates, download=False):
     rm_file = None if "11A BF-02 BUNKER" in skipped_downloads else find_latest_matching_file(download_folder, "11A BF-02 BUNKER")
     charge_file = None if "charge_and_dump" in skipped_downloads else find_latest_matching_file(download_folder, "CHARGE_AND_DUMP_REPORT_")
 
-    for run_date in run_dates:
-        # Process RM
-        if "rm" in modes:
-            if not rm_file:
-                print("❌ Bunker (RM) file not found in download folder or skipped.")
-            else:
-                print(f"📦 Processing RM sheet for {run_date}")
-                read_rm_sheet(
-                    file_path=rm_file,
+
+    # Process RM
+    if "rm" in modes:
+        if not rm_file:
+             print("❌ Bunker (RM) file not found in download folder or skipped.")
+        else:
+            print(f"📦 Processing RM sheet for {run_dates[0]}" if len(run_dates) == 1 else f"📦 Processing RM sheet from {run_dates[0]} to {run_dates[-1]}")
+            read_rm_sheet(                    file_path=rm_file,
                     RM_SHEET_CONFIG=RM_SHEET_CONFIG,
-                    start_date=run_date,
+                    start_date=run_dates,
                     output_dir=output_dir
                 )
+            
 
-        # Process DPR
-        if "dpr" in modes:
-            if not dpr_file:
-                print("❌ DPR file not found in download folder or skipped.")
-            else:
+    # 📊 Process DPR for all run_dates
+    if "dpr" in modes:
+        if not dpr_file:
+            print("❌ DPR file not found in download folder or skipped.")
+        else:
+            combined_dpr_dfs = []
+
+            for run_date in run_dates:
                 print(f"📊 Processing DPR sheet for {run_date}")
+
+                # Update config for that date
                 update_dpr_config_from_excel(
                     dpr_file,
                     os.path.join("src", "config", "setting.yaml"),
                     run_date
                 )
-                read_dpr_sheet(
+                config = load_config(os.path.join("src", "config", "setting.yaml"))
+
+                # Read the data
+                df = read_dpr_sheet(
                     file_path=dpr_file,
                     config=config,
                     start_date=run_date,
-                    output_dir=output_dir
+                    output_dir=output_dir  # Still needed if you save somewhere
                 )
+
+                if df is not None:
+                    combined_dpr_dfs.append(df)
+
+            # 🔄 Save combined data if multiple dates were processed
+        if combined_dpr_dfs:
+            final_df = pd.concat(combined_dpr_dfs, ignore_index=True)
+            out_path = os.path.join(output_dir, "combined_dpr_data.xlsx")
+            final_df.to_excel(out_path, index=False)
+            print(f"\n✅ Final DPR data written → {out_path}")
+        else:
+            print("⚠️ No DPR data found for any of the dates.")
 
     # Merge charge report
     if "charge" in modes:

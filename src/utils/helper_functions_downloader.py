@@ -75,9 +75,9 @@ def setup_browser_driver():
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=chrome_options)
 
-def login_dsm(driver, wait,LOGIN_URL, USER, PASSWD,):
+def login_eml(driver, wait, LOGIN_URL, USER, PASSWD):
     """
-    Log in to the DSM web interface using credentials from environment variables.
+    Log in to the EML web interface using credentials from environment variables.
     Maximizes the browser window, navigates to the login page, and submits the login form.
 
     Parameters:
@@ -85,7 +85,7 @@ def login_dsm(driver, wait,LOGIN_URL, USER, PASSWD,):
         wait: WebDriverWait instance for waiting on elements.
     """
     driver.maximize_window()
-    print("🌐 Navigating to DSM login...")
+    print("🌐 Navigating to EML login...")
     driver.get(LOGIN_URL)
     wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
     try:
@@ -95,12 +95,10 @@ def login_dsm(driver, wait,LOGIN_URL, USER, PASSWD,):
         username_input.send_keys(USER)
         password_input.clear()
         password_input.send_keys(PASSWD + Keys.ENTER)
-        print("🔐 DSM login submitted.")
+        print("🔐 EML login submitted.")
         time.sleep(5)
     except Exception as e:
         print(f"⚠️ Login skipped or already logged in: {e}")
-
-
 
 METADATA_FILE = "downloaded_metadata.json"
 
@@ -123,7 +121,6 @@ def parse_datetime(date_str):
         except Exception:
             continue
     return None
-
 
 
 
@@ -190,7 +187,7 @@ def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY
                 ActionChains(driver).move_to_element(row_element).double_click(row_element).perform()
 
                 print("⏳ Waiting 10 seconds for download to complete...")
-                time.sleep(0)
+                time.sleep(30)
 
                 previous_metadata[matched_row["name"]] = current_dt.strftime("%Y-%m-%d %H:%M:%S")
                 print(f"✅ Done: {matched_row['name']}")
@@ -302,6 +299,265 @@ def go_to_file_station_and_download(driver, wait, target_files, ROOT_URL, HOURLY
     return skipped_files
 
 
+def parse_date_input(start_date):
+    if isinstance(start_date, list):
+        return [datetime.strptime(d, "%d-%b-%Y").date() for d in start_date]
+    return [datetime.strptime(start_date, "%d-%b-%Y").date()]
+
+def normalize_columns(df):
+    df.columns = df.columns.str.strip().str.replace(" ", "_").str.upper()
+    return df
+
+def average_numeric_group(df, group_cols, skip_cols=[], preserve_order_col="MERGE_KEY"):
+    """
+    Groups by `group_cols`, averages numeric columns (ignoring 0s and NaNs),
+    merges string columns, and preserves row order.
+    """
+    results = []
+    order_map = (
+        df.drop_duplicates(preserve_order_col)
+        .reset_index()
+        .set_index(preserve_order_col)["index"]
+        .to_dict()
+    )
+
+    for keys, group in df.groupby(group_cols):
+        group = group.drop(columns=skip_cols, errors="ignore")
+
+        # Handle numeric columns
+        numeric_cols = []
+        for col in group.columns:
+            if col in group_cols:
+                continue
+            converted = pd.to_numeric(group[col], errors="coerce")
+            if converted.notna().sum() >= 0.8 * len(group):
+                group[col] = converted
+                numeric_cols.append(col)
+
+        num = group[numeric_cols].copy().where(lambda x: x != 0, pd.NA)
+
+        # Average numeric values
+        avg_row = {}
+        if not num.empty:
+            avg_row.update(num.mean(skipna=True).to_dict())
+
+        # Merge string columns (non-numeric, non-skip)
+        string_cols = [
+            col for col in group.columns
+            if col not in numeric_cols and col not in group_cols
+        ]
+        for col in string_cols:
+            unique_vals = group[col].dropna().astype(str).str.strip().unique()
+            if unique_vals.size > 0:
+                avg_row[col] = " | ".join(sorted(set(unique_vals)))
+
+        # Add group keys back
+        if isinstance(keys, tuple):
+            for i, col in enumerate(group_cols):
+                avg_row[col] = keys[i]
+            merge_key = f"{keys[0]}_{keys[1]}"
+        else:
+            avg_row[group_cols[0]] = keys
+            merge_key = str(keys)
+
+        avg_row["_ORDER"] = order_map.get(merge_key, -1)
+        avg_row[preserve_order_col] = merge_key
+        results.append(avg_row)
+
+    if not results:
+        return pd.DataFrame()
+
+    df_out = pd.DataFrame(results)
+    df_out.sort_values("_ORDER", inplace=True)
+    df_out.drop(columns=["_ORDER"], inplace=True)
+    return df_out
+
+
+def average_shift_blocks(df):
+    """
+    Averages rows per (DATE, SHIFT_GROUP), skipping zero/NaNs for numeric cols,
+    merges strings, and preserves original shift order.
+    """
+    df["SHIFT_GROUP"] = df["SHIFT"].str[0].str.upper()
+    df["MERGE_KEY"] = df["DATE"].astype(str) + "_" + df["SHIFT_GROUP"]
+
+    skip_cols = [
+        col for col in df.columns if col.upper() in {"SHIFT", "SHIFT_GROUP"}
+    ]
+
+    avg_df = average_numeric_group(
+        df,
+        group_cols=["DATE", "SHIFT_GROUP"],
+        skip_cols=skip_cols,
+        preserve_order_col="MERGE_KEY"
+    )
+
+    if avg_df.empty:
+        return pd.DataFrame(columns=["DATE", "SHIFT"])
+
+    # Rename SHIFT_GROUP to SHIFT
+    avg_df.rename(columns={"SHIFT_GROUP": "SHIFT"}, inplace=True)
+    avg_df.drop(columns=["MERGE_KEY"], inplace=True, errors="ignore")
+
+    # Ensure DATE and SHIFT appear at the front
+    ordered_cols = ["DATE", "SHIFT"] + [col for col in avg_df.columns if col not in {"DATE", "SHIFT"}]
+    avg_df = avg_df[ordered_cols]
+
+    print("✅ AVG is Done")
+    return avg_df
+
+def read_excel_sheet(xls, sheet, cols, hdr):
+    if sheet not in xls.sheet_names:
+        print(f"⚠️  Sheet '{sheet}' missing, skipping.")
+        return None
+    df = pd.read_excel(xls, sheet_name=sheet, usecols=cols, header=hdr).dropna(how="all").reset_index(drop=True)
+    return df.drop(columns=["TIME"], errors="ignore")
+
+def filter_by_date_and_shift(df, date_list, logger=None):
+    col_map = {col.strip().upper(): col for col in df.columns}
+    date_col = col_map.get("DATE")
+    shift_col = next((col_map[k] for k in col_map if "SHIFT" in k), None)
+    if not date_col or not shift_col:
+        msg = "⚠️  Missing DATE or SHIFT column — skipping this sheet"
+        print(msg) if logger is None else logger.warning(msg)
+        return None
+    parsed = pd.to_datetime(df[date_col], format="%d-%m-%Y", errors="coerce")
+    if parsed.isna().all():
+        parsed = pd.to_datetime(df[date_col], errors="coerce", dayfirst=True)
+    df[date_col] = parsed.dt.date
+    df[shift_col] = df[shift_col].astype(str).str.strip().str.upper()
+    VALID_SHIFTS = {"A", "B", "C"}
+    df[shift_col] = df[shift_col].apply(
+        lambda x: x[0] if x and isinstance(x, str) and x[0] in VALID_SHIFTS else pd.NA
+    )
+    before = len(df)
+    df = df[df[date_col].isin(date_list) & df[shift_col].notna()].reset_index(drop=True)
+    after = len(df)
+    msg = f"   ↪️  Kept {after}/{before} rows with valid DATE and SHIFT in {VALID_SHIFTS}"
+    print(msg) if logger is None else logger.info(msg)
+    return df
+
+def split_online_offline_and_merge(df):
+    df = normalize_columns(df)
+    df["ONLINE/OFFLINE"] = df["ONLINE/OFFLINE"].astype(str).str.strip()
+    df["SHIFT"] = df["SHIFT"].astype(str).str.strip()
+    df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce", dayfirst=True).dt.date
+    if "BNK_NO" in df.columns:
+        df["BNK_NO"] = df["BNK_NO"].astype(str).str.strip()
+    df["MERGE_KEY"] = df["DATE"].astype(str) + "_" + df["SHIFT"]
+    df["IS_ONLINE"] = df["ONLINE/OFFLINE"].str.contains(r"(?:ONLINE|EML)", case=False, na=False)
+
+    def reduce(g, suffix):
+        base = {col: g[col].iloc[0] for col in ["MERGE_KEY", "DATE", "SHIFT"] if col in g.columns}
+        numeric_cols = []
+        num_data = {}
+        for col in g.columns:
+            if col in base or col in ["IS_ONLINE", "MERGE_KEY", "DATE", "SHIFT"]:
+                continue
+            try:
+                converted = pd.to_numeric(g[col], errors="coerce")
+                if converted.notna().sum() >= 0.8 * len(g):
+                    vals = converted.replace(0, pd.NA).dropna()
+                    num_data[col + suffix] = round(vals.mean(skipna=True), 3) if not vals.empty else pd.NA
+                    numeric_cols.append(col)
+            except:
+                continue
+        for col in g.columns:
+            if col in base or col in numeric_cols or col in ["IS_ONLINE"]:
+                continue
+            unique_vals = g[col].dropna().astype(str).str.strip().unique()
+            base[col + suffix] = " | ".join(sorted(set(unique_vals)))
+        base.update(num_data)
+        return base
+
+    records = []
+    for (key, shift), group in df.groupby(["MERGE_KEY", "SHIFT"]):
+        online, offline = group[group["IS_ONLINE"]], group[~group["IS_ONLINE"]]
+        if len(online) > 1:
+            print(f"\n🟦 Multiple ONLINE rows for DATE: {group['DATE'].iloc[0]}, SHIFT: {shift}")
+            print(online.to_string(index=False))
+        if len(offline) > 1:
+            print(f"\n🟥 Multiple OFFLINE rows for DATE: {group['DATE'].iloc[0]}, SHIFT: {shift}")
+            print(offline.to_string(index=False))
+        combined = {}
+        if not online.empty: combined.update(reduce(online, "_ON"))
+        if not offline.empty: combined.update(reduce(offline, "_OFF"))
+        records.append(combined)
+
+    df_out = pd.DataFrame(records)
+    final_df = pd.merge(df.drop_duplicates("MERGE_KEY")[["MERGE_KEY"]].reset_index(), df_out, on="MERGE_KEY")
+    return final_df.drop(columns=["MERGE_KEY", "index"])
+
+def prefix_columns(df, prefix):
+    df.columns = [prefix + str(c) for c in df.columns]
+    return df
+
+def write_combined_file(parts, combined_path, date_list):
+    combined = pd.concat(parts, axis=1)
+    date_cols = [c for c in combined.columns if c.upper().endswith("_DATE")]
+    if date_cols:
+        combined["Date"] = combined[date_cols[0]]
+        combined.drop(columns=date_cols, inplace=True)
+        combined = combined[["Date"] + [c for c in combined.columns if c != "Date"]]
+    combined["Date"] = pd.to_datetime(combined["Date"], errors="coerce").dt.date
+    target_dates = set(date_list)
+    if len(date_list) == 1:
+        combined.to_excel(combined_path, index=False)
+    else:
+        if os.path.exists(combined_path):
+            existing = pd.read_excel(combined_path)
+            existing["Date"] = pd.to_datetime(existing["Date"], errors="coerce").dt.date
+            existing = existing[~existing["Date"].isin(target_dates)].reset_index(drop=True)
+            combined = pd.concat([existing, combined], ignore_index=True)
+        combined.to_excel(combined_path, index=False)
+
+def read_rm_sheet(file_path, RM_SHEET_CONFIG, start_date="11-Jul-2025", output_dir="outputs"):
+    print(f"\n📄 Reading Excel file: {file_path}")
+    date_list = parse_date_input(start_date)
+    print(f"   ↪️ Including rows from {date_list[0]} to {date_list[-1]}" if len(date_list) > 1 else f"   ↪️ Including rows with DATE == {date_list[0]}")
+    os.makedirs(output_dir, exist_ok=True)
+    combined_path = os.path.join(output_dir, "combined_bunker_data.xlsx")
+    xls = pd.ExcelFile(file_path)
+    parts = []
+
+    for key, cfg in RM_SHEET_CONFIG.items():
+        sheet, cols, hdr = cfg["sheet_name"], cfg["columns"], cfg["header_row"] - 1
+        prefix = cfg.get("col_prefix", "")
+        df = read_excel_sheet(xls, sheet, cols, hdr)
+        if df is None:
+            continue
+
+        df = normalize_columns(df)
+        df = filter_by_date_and_shift(df, date_list)
+        if df is None or df.empty:
+            print(f"   ❌  {key}: no valid data")
+            
+            continue
+
+        if "ONLINE/OFFLINE" in df.columns:
+            df = split_online_offline_and_merge(df)
+            print(f"   ✅  {key}: merged ONLINE + OFFLINE per SHIFT+DATE")
+
+        # ✅ Apply averaging if multiple rows for a normalized shift group
+        if "SHIFT" in df.columns and "DATE" in df.columns:
+            shift_counts = df.groupby(["DATE", "SHIFT"]).size().reset_index(name="count")
+            if any(shift_counts["count"] > 1):
+                print(df)
+                df = average_shift_blocks(df)
+                
+                print(f"   🔄  {key}: averaged multiple rows per SHIFT block")
+
+        df = prefix_columns(df, prefix)
+        parts.append(df)
+
+    if parts:
+        write_combined_file(parts, combined_path, date_list)
+    else:
+        print("⚠️  No valid data combined — exiting.")
+
+
+
+
 
 
 
@@ -315,13 +571,9 @@ def parse_sheet_date(name):
     except:
         return None
 
+
 def update_dpr_config_from_excel(excel_path, yaml_path, run_date):
-    from datetime import datetime
-    from openpyxl import load_workbook
-    from ruamel.yaml import YAML
-    import re
-    from calendar import month_abbr
-    from config.loader import load_config
+
 
     config = load_config(yaml_path)
     yaml = YAML()
@@ -378,138 +630,6 @@ def update_dpr_config_from_excel(excel_path, yaml_path, run_date):
         yaml.dump(config, f)
 
     print(f"✅ Updated '{yaml_path}' with sheet '{target_sheet}' → rows: {block['rows']}")
-
-
-
-
-def read_rm_sheet(
-    file_path: str,
-    RM_SHEET_CONFIG: dict,
-    start_date: str = "11-Jul-2025",
-    output_dir: str = "outputs"
-):
-    """
-    Reads and combines raw sheets per RM_SHEET_CONFIG (with SINTER averaging).
-    Saves a stacked “combined_bunker_data.xlsx” in output_dir.
-
-    Parameters:
-        file_path (str): Path to the Excel file.
-        RM_SHEET_CONFIG (dict): Configuration for reading sheets.
-        start_date (str or list): Single date (dd-MMM-yyyy) or list of dates.
-        output_dir (str): Directory to save the combined Excel file.
-    """
-
-    print(f"\n📄 Reading Excel file: {file_path}")
-
-    if isinstance(start_date, list):
-        date_list = [datetime.strptime(d, "%d-%b-%Y").date() for d in start_date]
-        print(f"   ↪️ Including rows for {len(date_list)} dates: {date_list[0]} to {date_list[-1]}")
-    else:
-        date_list = [datetime.strptime(start_date, "%d-%b-%Y").date()]
-        print(f"   ↪️ Including rows with DATE == {date_list[0]}")
-
-    os.makedirs(output_dir, exist_ok=True)
-    combined_path = os.path.join(output_dir, "combined_bunker_data.xlsx")
-
-    xls = pd.ExcelFile(file_path)
-    parts = []
-
-    for key, cfg in RM_SHEET_CONFIG.items():
-        sheet = cfg["sheet_name"]
-        cols = cfg["columns"]
-        hdr = cfg["header_row"] - 1
-        prefix = cfg.get("col_prefix", "")
-
-        if sheet not in xls.sheet_names:
-            print(f"⚠️  Sheet '{sheet}' missing, skipping.")
-            continue
-
-        print(f"\n🔍  {key}: reading '{sheet}' cols={cols} hdr={hdr+1}")
-        df = (pd.read_excel(xls, sheet_name=sheet, usecols=cols, header=hdr)
-              .dropna(how="all")
-              .reset_index(drop=True))
-        if "TIME" in df.columns:
-            df = df.drop(columns=["TIME"])
-
-        # SINTER averaging
-        if key.upper() == "SINTER" and {"DATE", "SHIFT"}.issubset(df.columns):
-            print("   ↪️  SINTER averaging")
-            df.columns = df.columns.str.strip()
-            if "% T. ALKALI" in df and "Unnamed: 12" in df:
-                df = df.rename({"% T. ALKALI": "%Na2O", "Unnamed: 12": "%K2O"}, axis=1)
-            df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce").dt.date
-            df["SHIFT"] = df["SHIFT"].astype(str).str.strip()
-
-            avg_rows = []
-            pairs = [("C-1", "C-2"), ("A-1", "A-2"), ("B-1", "B-2")]
-            exclude = ["SHIFT", "BUNKER NO."]
-            for dt in df["DATE"].dropna().unique():
-                sub = df[df["DATE"] == dt]
-                for s1, s2 in pairs:
-                    block = sub[sub["SHIFT"].isin([s1, s2])]
-                    num = (block.drop(columns=exclude, errors="ignore")
-                                 .apply(pd.to_numeric, errors="coerce"))
-                    if num.empty: continue
-                    r1 = num.iloc[0] if len(num) > 0 else None
-                    r2 = num.iloc[1] if len(num) > 1 else None
-                    if r1 is not None and r2 is not None:
-                        merged = [(v1 + v2) / 2 if pd.notna(v1) and pd.notna(v2) and v1 != 0 and v2 != 0
-                                  else (v2 if pd.isna(v1) or v1 == 0 else v1)
-                                  for v1, v2 in zip(r1, r2)]
-                        out = pd.Series(merged, index=num.columns)
-                    elif r1 is not None:
-                        out = r1
-                    else:
-                        out = r2
-                    out["DATE"] = dt
-                    out["SHIFT"] = s1[0]
-                    avg_rows.append(out)
-            df = pd.DataFrame(avg_rows)
-            if not df.empty:
-                df = df[["DATE", "SHIFT"] + [c for c in df.columns if c not in ("DATE", "SHIFT")]]
-            else:
-                print("   ⚠️  No SINTER averages")
-
-        # Filter by date
-        if "DATE" in df.columns and "SHIFT" in df.columns:
-            df["DATE"] = pd.to_datetime(df["DATE"], errors="coerce").dt.date
-            df["SHIFT"] = df["SHIFT"].astype(str).str.strip().replace({"": pd.NA, "nan": pd.NA, "NaN": pd.NA})
-
-            before = len(df)
-            df = df[df["DATE"].notna() & df["SHIFT"].notna()]
-            df = df[df["DATE"].isin(date_list)].reset_index(drop=True)
-
-            print(f"   ↪️  Kept {len(df)}/{before} rows matching target dates")
-        else:
-            print("   ⚠️  DATE and SHIFT columns missing — skipping this sheet")
-            continue
-
-        # Prefix columns
-        df.columns = [prefix + str(c) for c in df.columns]
-
-        if not df.empty:
-            parts.append(df)
-            print(f"   ✅  {key}: included {len(df)} rows")
-        else:
-            print(f"   ❌  {key}: no valid data")
-            print(f"📂 Reading RM Excel file: {file_path}")
-
-    if not parts:
-        print("⚠️  No valid data combined — exiting.")
-        return
-
-    combined = pd.concat(parts, axis=1)
-
-    # Collapse *_DATE columns to single 'Date'
-    date_cols = [c for c in combined.columns if c.upper().endswith("_DATE")]
-    if date_cols:
-        combined["Date"] = combined[date_cols[0]]
-        combined = combined.drop(columns=date_cols)
-        combined = combined[["Date"] + [c for c in combined.columns if c != "Date"]]
-
-    combined.to_excel(combined_path, index=False)
-    print(f"\n✅  Final combined data written → {combined_path}")
-
 
 
 def read_dpr_sheet(
@@ -612,11 +732,11 @@ def read_dpr_sheet(
         return
 
     final_df = pd.concat(all_parts, ignore_index=True)
-    out_path = os.path.join(output_dir, "combined_dpr_data.xlsx")
-    final_df.to_excel(out_path, index=False)
-    print(f"\n✅ Final DPR data written → {out_path}")
-
-
+    os.path.join(output_dir, "combined_dpr_data.xlsx")
+    # final_df.to_excel(out_path, index=False)
+    # print(f"\n✅ Final DPR data written → {out_path}")
+    print(f"\n✅ DPR data extracted for {start_date}")
+    return final_df
 
 
 def merge_hourly_excel(filepath: str):
