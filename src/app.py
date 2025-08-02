@@ -4,17 +4,24 @@ import os
 import glob
 import pandas as pd
 from config.loader import load_config
+from utils.influx_writer import push_dataframe_to_influx
 from utils.helper_functions_downloader import (
     read_rm_sheet,
     read_dpr_sheet,
-    merge_hourly_excel,
     setup_browser_driver,
     login_eml,
     go_to_file_station_and_download,
-    update_dpr_config_from_excel
+    update_dpr_config_from_excel,
+    process_shiftwise_charge_data
 )
 from selenium.webdriver.support.ui import WebDriverWait
 
+def rename_fields(df, field_mapping):
+    """
+    Rename dataframe columns using the field_mapping defined in YAML config.
+    Ignores fields not present in mapping.
+    """
+    return df.rename(columns={k: v for k, v in field_mapping.items() if k in df.columns})
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Offline Data Consolidation CLI")
@@ -56,6 +63,8 @@ def find_latest_matching_file(folder, prefix):
 def run_modes(modes, run_dates, download=False):
     config = load_config()
     RM_SHEET_CONFIG = config.get("RM_SHEET_CONFIG", {})
+    print("🔍 Config keys loaded:", config.keys())
+
     output_dir = "outputs"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -92,21 +101,62 @@ def run_modes(modes, run_dates, download=False):
     download_folder = config["download_folder"]
     dpr_file = None if "BF-02 DPR" in skipped_downloads else find_latest_matching_file(download_folder, "BF-02 DPR")
     rm_file = None if "11A BF-02 BUNKER" in skipped_downloads else find_latest_matching_file(download_folder, "11A BF-02 BUNKER")
-    charge_file = None if "charge_and_dump" in skipped_downloads else find_latest_matching_file(download_folder, "CHARGE_AND_DUMP_REPORT_")
 
+    def find_charge_files_for_shift(run_date_str, download_folder):
+        run_date = datetime.strptime(run_date_str, "%d-%b-%Y")
+        prev_date = run_date - timedelta(days=1)
 
+        def find_latest_file_for_date(date_obj):
+            pattern = os.path.join(
+                download_folder,
+                f"CHARGE_AND_DUMP_REPORT_{date_obj.day}_{date_obj.month}_{date_obj.year}*.xlsx"
+            )
+            matches = glob.glob(pattern)
+            if not matches:
+                return None
+            matches.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            return matches[0]
+
+        current_file = find_latest_file_for_date(run_date)
+        previous_file = find_latest_file_for_date(prev_date)
+
+        return current_file, previous_file
+    
+    # Function to rename fields in a DataFrame
+    def rename_fields(df: pd.DataFrame, mapping: dict):
+        return df.rename(columns=mapping)
     # Process RM
     if "rm" in modes:
         if not rm_file:
-             print("❌ Bunker (RM) file not found in download folder or skipped.")
+            print("❌ Bunker (RM) file not found in download folder or skipped.")
         else:
             print(f"📦 Processing RM sheet for {run_dates[0]}" if len(run_dates) == 1 else f"📦 Processing RM sheet from {run_dates[0]} to {run_dates[-1]}")
-            read_rm_sheet(                    file_path=rm_file,
-                    RM_SHEET_CONFIG=RM_SHEET_CONFIG,
-                    start_date=run_dates,
-                    output_dir=output_dir
-                )
             
+            read_rm_sheet(
+                file_path=rm_file,
+                RM_SHEET_CONFIG=RM_SHEET_CONFIG,
+                start_date=run_dates,
+                output_dir=output_dir
+            )
+
+            # Write RM to InfluxDB
+            influx_cfg = config["influxdb"]
+            rm_df_path = os.path.join(output_dir, "combined_bunker_data.xlsx")
+            if os.path.exists(rm_df_path):
+                df_rm = pd.read_excel(rm_df_path)
+
+                # Apply field mapping
+                field_mapping = config.get("rm_feilds", {})  # Make sure spelling is rm_feilds as in your YAML
+                df_rm = rename_fields(df_rm, field_mapping)
+                # df_rm = clean_and_convert(df_rm, list(config["rm_feilds"].keys()))
+
+                # Ensure 'date' column exists
+                if "date" not in df_rm.columns:
+                    raise ValueError("Missing 'date' column after renaming RM fields.")
+                
+                # Push to InfluxDB
+                push_dataframe_to_influx( df_rm, influx_cfg["bucket"], "rm_data", influx_cfg, field_mapping=config["rm_feilds"])
+                print("✅ RM data pushed to InfluxDB.")
 
     # 📊 Process DPR for all run_dates
     if "dpr" in modes:
@@ -114,46 +164,63 @@ def run_modes(modes, run_dates, download=False):
             print("❌ DPR file not found in download folder or skipped.")
         else:
             combined_dpr_dfs = []
+            config_cache = {}  # cache config for (month, year)
 
             for run_date in run_dates:
                 print(f"📊 Processing DPR sheet for {run_date}")
+                run_date_obj = datetime.strptime(run_date, "%d-%b-%Y")
+                month_year_key = (run_date_obj.month, run_date_obj.year)
 
-                # Update config for that date
-                update_dpr_config_from_excel(
-                    dpr_file,
-                    os.path.join("src", "config", "setting.yaml"),
-                    run_date
-                )
+                if month_year_key not in config_cache:
+                    print(f"🔁 Updating config for {run_date}")
+                    update_dpr_config_from_excel(
+                        dpr_file,
+                        os.path.join("src", "config", "setting.yaml"),
+                        run_date
+                    )
+
                 config = load_config(os.path.join("src", "config", "setting.yaml"))
+                config_cache[month_year_key] = config  # save loaded config for reuse
 
                 # Read the data
                 df = read_dpr_sheet(
                     file_path=dpr_file,
                     config=config,
                     start_date=run_date,
-                    output_dir=output_dir  # Still needed if you save somewhere
+                    output_dir=output_dir
                 )
 
                 if df is not None:
                     combined_dpr_dfs.append(df)
 
-            # 🔄 Save combined data if multiple dates were processed
-        if combined_dpr_dfs:
-            final_df = pd.concat(combined_dpr_dfs, ignore_index=True)
-            out_path = os.path.join(output_dir, "combined_dpr_data.xlsx")
-            final_df.to_excel(out_path, index=False)
-            print(f"\n✅ Final DPR data written → {out_path}")
-        else:
-            print("⚠️ No DPR data found for any of the dates.")
+            if combined_dpr_dfs:
+                final_df = pd.concat(combined_dpr_dfs, ignore_index=True)
+                out_path = os.path.join(output_dir, "combined_dpr_data.xlsx")
+                final_df.to_excel(out_path, index=False)
+                print(f"\n✅ Final DPR data written → {out_path}")
+
+                # Use the last config used (all are same for same month/year)
+                field_mapping = config.get("dpr_fields", {})
+                final_df = rename_fields(final_df, field_mapping)
+
+                if "date" not in final_df.columns:
+                    raise ValueError("Missing 'date' column after renaming DPR fields.")
+
+                push_dataframe_to_influx(final_df, config["influxdb"]["bucket"], "dpr_data", config["influxdb"], field_mapping=config["dpr_fields"])
+                print("✅ DPR data pushed to InfluxDB.")
+            else:
+                print("⚠️ No DPR data found for any of the dates.")
 
     # Merge charge report
     if "charge" in modes:
-        if not charge_file:
-            print("❌ Charge report not found or skipped.")
+        charge_file_current, charge_file_prev = find_charge_files_for_shift(run_dates[0], download_folder)
+        if not charge_file_current:
+            print("❌ Charge report file not found.")
         else:
-            print(f"🔁 Merging Charge Report: {charge_file}")
-            merge_hourly_excel(charge_file)
+            print(f"🔁 Processing charge reports: {charge_file_prev} and {charge_file_current}")
+            process_shiftwise_charge_data(charge_file_current, charge_file_prev, output_dir, run_dates[0])
 
+            
 
 if __name__ == "__main__":
     args = parse_args()

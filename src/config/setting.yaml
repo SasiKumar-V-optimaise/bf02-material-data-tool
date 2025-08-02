@@ -1,3 +1,10 @@
+influxdb:
+  url: https://eu-central-1-1.aws.cloud2.influxdata.com
+  org: Blast Furnace, Evonith
+  bucket: bf2_evonith_offline
+  timestamp_col: date
+  token: 
+    nHAojg_78ItUVhzykJ4k4RM6dqR3spOJy-4LmEXWCL6G_6Wx_6DUclYyeq6mwxom4GFNKZN9sp43awiKRL9jMA==
 download_folder: C:\Users\sasik\Downloads
 download_filenames:
 - 11A BF-02 BUNKER
@@ -19,7 +26,7 @@ RM_SHEET_CONFIG:
   COKE:
     sheet_name: LAM COKE
     columns: B:K
-    header_row: 3
+    header_row: 2
     col_prefix: COKE_
   NUT COKE:
     sheet_name: NUT COKE
@@ -30,22 +37,27 @@ RM_SHEET_CONFIG:
     sheet_name: 'JRS VENTURES '
     columns: B:S
     header_row: 3
-    col_prefix: JRSVENTURES_
+    col_prefix: ORE_4_
   NMDC DONOMALAI:
     sheet_name: NMDC DONOMALAI
+    columns: B:S
+    header_row: 2
+    col_prefix: ORE_1_
+  NMDC ROM:
+    sheet_name: NMDC ROM
     columns: B:R
     header_row: 2
-    col_prefix: NMDC_
+    col_prefix: ORE_5_
   LLOYDS CLO:
     sheet_name: LLOYDS CLO
-    columns: B:T
+    columns: B:S
     header_row: 2
-    col_prefix: LLOYDS_
+    col_prefix: ORE_2_
   GEOMIN CLO:
     sheet_name: GEOMIN CLO
     columns: B:S
     header_row: 2
-    col_prefix: GEOMIN_
+    col_prefix: ORE_3_
   SINTER:
     sheet_name: SINTER
     columns: B:Q
@@ -68,14 +80,13 @@ RM_SHEET_CONFIG:
     col_prefix: PCI_
 DPR_CONFIG:
   sheets:
-    Jul25:
-      sheet_name: Jul'25
+    Aug25:
+      sheet_name: Aug'25
       date_row: 5
       date_cols:
       - H
       - AM
       rows:
-        Total Coke: 288
         Coke Online - EML: 280
         Total purchase coke: 284
         Prime Nut Coke (B-13): 27
@@ -86,12 +97,13 @@ DPR_CONFIG:
         Geomine industries: 127
         JRS VENTURES: 155
         Lloyds metal energy: 176
-        Llyods fines oversize(+10mm): 183
         Dolomite: 250
         Quartzite: 251
       rename_map:
         TOTAL_COKE_MT:
         - Total Coke
+        COKE_ONLINE_MT:
+        - Coke Online - EML
         COKE_OFFLINE_MT:
         - Total purchase coke
         PRIME_NUT_COKE_MT:
@@ -116,3 +128,117 @@ DPR_CONFIG:
         - Quartzite
         NMDC_MT:
         - NMDC DONIMALAI
+rm_feilds:
+  Date: date
+  COKE_%_TMARB_ON: coke_pct_tmarb_on
+  COKE_%MOISTURE_ON: coke_pct_moisture_on
+  COKE_%ASHDB_ON: coke_pct_ashdb_on
+  COKE_%VMDB_ON: coke_pct_vmdb_on
+  COKE_%FCDB_ON: coke_pct_fcdb_on
+  COKE_%_TMARB_OFF: coke_pct_tmarb_off
+  COKE_%MOISTURE_OFF: coke_pct_moisture_off
+  COKE_%ASHDB_OFF: coke_pct_ashdb_off
+  COKE_%VMDB_OFF: coke_pct_vmdb_off
+  COKE_%FCDB_OFF: coke_pct_fcdb_off
+  NUTCOKE_%TM: nutcoke_pct_tm
+  NUTCOKE_%IM: nutcoke_pct_im
+  NUTCOKE_%ASH: nutcoke_pct_ash
+  NUTCOKE_%VM: nutcoke_pct_vm
+  NUTCOKE_%FC: nutcoke_pct_fc
+  SINTER_SP_02_%FE(T): sinter_sp_02_pct_fe_t
+  SINTER_SP_02_%FEO: sinter_sp_02_pct_feo
+  SINTER_SP_02_%SIO2: sinter_sp_02_pct_sio2
+  SINTER_SP_02_%AL2O3: sinter_sp_02_pct_al2o3
+  SINTER_SP_02_%CAO: sinter_sp_02_pct_cao
+  SINTER_SP_02_%MGO: sinter_sp_02_pct_mgo
+  SINTER_SP_02_%_T._ALKALI: sinter_sp_02_pct_total_alkali_pct_na2O
+  SINTER_SP_02_UNNAMED:_12: sinter_sp_02_pct_total_alkali_pct_k2O
+  SINTER_SP_02_%P: sinter_sp_02_pct_p
+  SINTER_SP_02_%MNO: sinter_sp_02_pct_mno
+  SINTER_SP_02_%TIO2: sinter_sp_02_pct_tio2
+  SINTER_SP_02_BASICITY: sinter_sp_02_basicity
+  QUARTZ_%SIO2: quartz_pct_sio2
+  QUARTZ_%AL2O3: quartz_pct_al2o3
+  QUARTZ_%FE2O3: quartz_pct_fe2o3
+  QUARTZ_%LOI: quartz_pct_loi
+  QUARTZ_%TM: quartz_pct_tm
+  PCI_%IM: pci_pct_im
+  PCI_%ASH: pci_pct_ash
+  PCI_%VM: pci_pct_vm
+  PCI_%FC: pci_pct_fc
+  ORE_1_%FE(T): ore_1_pct_fe_t
+  ORE_1_%SIO2: ore_1_pct_sio2
+  ORE_1_%AL2O3: ore_1_pct_al2o3
+  ORE_1_%P: ore_1_pct_p
+  ORE_1_%TIO2: ore_1_pct_tio2
+  ORE_1_%NA2O: ore_1_pct_na2o
+  ORE_1_%K2O: ore_1_pct_k2o
+  ORE_1_%MNO: ore_1_pct_mno
+  ORE_1_%CAO: ore_1_pct_cao
+  ORE_1_%MGO: ore_1_pct_mgo
+  ORE_1_%LOI: ore_1_pct_loi
+  ORE_1_%TM: ore_1_pct_tm
+  ORE_2_%FE(T): ore_2_pct_fe_t
+  ORE_2_%SIO2: ore_2_pct_sio2
+  ORE_2_%AL2O3: ore_2_pct_al2o3
+  ORE_2_%P: ore_2_pct_p
+  ORE_2_%TIO2: ore_2_pct_tio2
+  ORE_2_%NA2O: ore_2_pct_na2o
+  ORE_2_%K2O: ore_2_pct_k2o
+  ORE_2_%MNO: ore_2_pct_mno
+  ORE_2_%CAO: ore_2_pct_cao
+  ORE_2_%MGO: ore_2_pct_mgo
+  ORE_2_%LOI: ore_2_pct_loi
+  ORE_2_%TM: ore_2_pct_tm
+  ORE_3_%FE(T): ore_3_pct_fe_t
+  ORE_3_%SIO2: ore_3_pct_sio2
+  ORE_3_%AL2O3: ore_3_pct_al2o3
+  ORE_3_%P: ore_3_pct_p
+  ORE_3_%TIO2: ore_3_pct_tio2
+  ORE_3_%NA2O: ore_3_pct_na2o
+  ORE_3_%K2O: ore_3_pct_k2o
+  ORE_3_%MNO: ore_3_pct_mno
+  ORE_3_%CAO: ore_3_pct_cao
+  ORE_3_%MGO: ore_3_pct_mgo
+  ORE_3_%LOI: ore_3_pct_loi
+  ORE_3_%TM: ore_3_pct_tm
+  ORE_4_%FE(T): ore_4_pct_fe_t
+  ORE_4_%SIO2: ore_4_pct_sio2
+  ORE_4_%AL2O3: ore_4_pct_al2o3
+  ORE_4_%P: ore_4_pct_p
+  ORE_4_%TIO2: ore_4_pct_tio2
+  ORE_4_%NA2O: ore_4_pct_na2o
+  ORE_4_%K2O: ore_4_pct_k2o
+  ORE_4_%MNO: ore_4_pct_mno
+  ORE_4_%CAO: ore_4_pct_cao
+  ORE_4_%MGO: ore_4_pct_mgo
+  ORE_4_%LOI: ore_4_pct_loi
+  ORE_4_%TM: ore_4_pct_tm
+  ORE_5_%FE(T): ore_5_pct_fe_t
+  ORE_5_%SIO2: ore_5_pct_sio2
+  ORE_5_%AL2O3: ore_5_pct_al2o3
+  ORE_5_%P: ore_5_pct_p
+  ORE_5_%TIO2: ore_5_pct_tio2
+  ORE_5_%NA2O: ore_5_pct_na2o
+  ORE_5_%K2O: ore_5_pct_k2o
+  ORE_5_%MNO: ore_5_pct_mno
+  ORE_5_%CAO: ore_5_pct_cao
+  ORE_5_%MGO: ore_5_pct_mgo
+  ORE_5_%LOI: ore_5_pct_loi
+  ORE_5_%TM: ore_5_pct_tm
+dpr_fields:
+  Date: date
+  TOTAL_COKE_MT: total_coke_mt
+  COKE_ONLINE_MT: coke_online_eml
+  COKE_OFFLINE_MT: coke_offline_mt
+  PRIME_NUT_COKE_MT: prime_nut_coke_mt
+  YARD_NUTCOKE_MT: yard_nutcoke_mt
+  PCI_MT: pci_mt
+  SINTER_SP_02_MT: sinter_sp_02_mt
+  NMDC_MT: nmdc_mt
+  GEOMIN_MT: geomin_mt
+  JRSVENTURES_MT: jrsventures_mt
+  LLOYDS_MT: lloyds_mt
+  LLOYDS_FINES_MT: lloyds_fines_mt
+  DOLOMITE_MT: dolomite_mt
+  QUARTZITE_MT: quartzite_mt
