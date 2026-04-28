@@ -1,244 +1,551 @@
-influxdb:
-  url: https://eu-central-1-1.aws.cloud2.influxdata.com
-  org: Blast Furnace, Evonith
-  bucket: bf2_evonith_offline
-  timestamp_col: date
-  token: 
-    nHAojg_78ItUVhzykJ4k4RM6dqR3spOJy-4LmEXWCL6G_6Wx_6DUclYyeq6mwxom4GFNKZN9sp43awiKRL9jMA==
-download_folder: C:\Users\sasik\Downloads
-download_filenames:
-- 11A BF-02 BUNKER
-- BF-02 DPR
-download_filenames_map:
-  rm: 11A BF-02 BUNKER
-  dpr: BF-02 DPR
-start_date: 11-Jul-2025
-default_timeout: 180
-eml:
-  url: https://ithelpdesk-ugml.sg4.quickconnect.to/
-  file_station: 
-    https://ithelpdesk-ugml.sg4.quickconnect.to/?launchApp=SYNO.SDS.App.FileStation3.Instance&SynoToken=laNlkmozfCC0g
-  user: voptim
-  password: Vop@202425
-  hourly_url: 
-    https://ithelpdesk-ugml.sg4.quickconnect.to/index.cgi?launchApp=SYNO.SDS.App.FileStation3.Instance&launchParam=openfile%3D%252FV-Optimaise%2520Data%252FBF2%2520AUTO%2520REPORTS%252FCHARGE%2520AND%2520DUMP%252FHOURLY%252F
-RM_SHEET_CONFIG:
-  COKE:
-    sheet_name: LAM COKE
-    columns: B:K
-    header_row: 2
-    col_prefix: COKE_
-  NUT COKE:
-    sheet_name: NUT COKE
-    columns: B:J
-    header_row: 2
-    col_prefix: NUTCOKE_
-  JRS VENTURES:
-    sheet_name: 'JRS VENTURES '
-    columns: B:S
-    header_row: 3
-    col_prefix: ORE_4_
-  NMDC DONOMALAI:
-    sheet_name: NMDC DONOMALAI
-    columns: B:S
-    header_row: 2
-    col_prefix: ORE_1_
-  NMDC ROM:
-    sheet_name: NMDC ROM
-    columns: B:R
-    header_row: 2
-    col_prefix: ORE_5_
-  LLOYDS CLO:
-    sheet_name: LLOYDS CLO
-    columns: B:S
-    header_row: 2
-    col_prefix: ORE_2_
-  GEOMIN CLO:
-    sheet_name: GEOMIN CLO
-    columns: B:S
-    header_row: 2
-    col_prefix: ORE_3_
-  SINTER:
-    sheet_name: SINTER
-    columns: B:Q
-    header_row: 2
-    col_prefix: SINTER_SP_02_
-  QUARTZ:
-    sheet_name: QUARTZ
-    columns: B:J
-    header_row: 2
-    col_prefix: QUARTZ_
-  DOLOMITE:
-    sheet_name: DOLOMITE
-    columns: B:L
-    header_row: 2
-    col_prefix: DOLOMITE_
-  PCI:
-    sheet_name: PCI ANALYSIS -02
-    columns: B:G
-    header_row: 6
-    col_prefix: PCI_
 DPR_CONFIG:
   sheets:
-    Aug25:
-      sheet_name: Aug'25
-      date_row: 5
+    Apr26:
       date_cols:
       - H
       - AM
-      rows:
-        Coke Online - EML: 280
-        Total purchase coke: 284
-        Prime Nut Coke (B-13): 27
-        Yard Nut Coke (B-3): 28
-        PCI Coal: 29
-        Online+Offline Sinter: 30
-        NMDC DONIMALAI: 113
-        Geomine industries: 127
-        JRS VENTURES: 155
-        Lloyds metal energy: 176
-        Dolomite: 250
-        Quartzite: 251
+      date_row: 5
       rename_map:
-        TOTAL_COKE_MT:
-        - Total Coke
+        COKE_OFFLINE_MT:
+        - Coke Offline - EML
         COKE_ONLINE_MT:
         - Coke Online - EML
-        COKE_OFFLINE_MT:
+        TOTAL_PURCHASE_COKE_MT:
         - Total purchase coke
-        PRIME_NUT_COKE_MT:
-        - Prime Nut Coke (B-13)
-        YARD_NUTCOKE_MT:
-        - Yard Nut Coke (B-3)
-        PCI_MT:
-        - PCI Coal
-        SINTER_SP_02_MT:
-        - Online+Offline Sinter
+        DOLOMITE_MT:
+        - Dolomite
         GEOMIN_MT:
         - Geomine industries
         JRSVENTURES_MT:
         - JRS VENTURES
+        LLOYDS_FINES_MT:
+        - Lloyds fines oversize
         LLOYDS_MT:
         - Lloyds metal energy
-        LLOYDS_FINES_MT:
-        - Llyods fines oversize(+10mm)
-        DOLOMITE_MT:
-        - Dolomite
-        QUARTZITE_MT:
-        - Quartzite
+        TOTAL_PELLET_MT:
+        - Total Pellet
         NMDC_MT:
         - NMDC DONIMALAI
+        PCI_MT:
+        - PCI Coal
+        PRIME_NUT_COKE_MT:
+        - Prime Nut Coke (B-13)
+        QUARTZITE_MT:
+        - Quartzite
+        SINTER_SP_02_MT:
+        - Online+Offline Sinter
+        TOTAL_COKE_MT:
+        - Total Coke
+        YARD_NUTCOKE_MT:
+        - Yard Nut Coke (B-3)
+        SLAG_GENERATION_MT:
+        - Slag Generation (Calculated)
+        NMDC_ROM_MT:
+        - NMDC ROM
+        Acore MN Ore_MT:
+        - MN Ore
+        GOMTI_MT:
+        - Gomati
+        TITAN_IF_MT:
+        - TITAN IF
+        jAYSWAL_NECO_MT:
+        - JAYASWAL NECO
+        Donimalai_Fines_Over_size_MT:
+        - Donimalai  Fines Over size
+      rows:
+        Coke Online - EML: 282
+        Coke Offline - EML: 278
+        Dolomite: 251
+        Geomine industries: 128
+        JRS VENTURES: 0
+        JAYASWAL NECO: 191
+        Lloyds metal energy: 177
+        Llyods fines oversize(+10mm): 0
+        Lloyds fines oversize: 114
+        LLYODS FINES OVERSIZE: 0
+        Lloyds fines (+10mm): 0
+        Total Pellet: 107
+        NMDC DONIMALAI: 163
+        Online+Offline Sinter: 30
+        PCI Coal: 29
+        Prime Nut Coke (B-13): 27
+        Quartzite: 252
+        Total purchase coke: 286
+        Yard Nut Coke (B-3): 28
+        Slag Generation (Calculated): 15
+        Donimalai  Fines Over size: 121
+        MN Ore: 0
+        NMDC ROM: 0
+        Acore MN Ore: 0
+        Gomati: 184
+        TITAN IF: 198
+      sheet_name: Apr'26
+RM_SHEET_CONFIG:
+  COKE:
+    col_prefix: COKE_
+    columns: A:J
+    header_row: 2
+    sheet_name: LAM COKE
+  DOLOMITE:
+    col_prefix: DOLOMITE_
+    columns: A:L
+    header_row: 2
+    sheet_name: DOLOMITE
+  GEOMIN CLO:
+    col_prefix: ORE_3_
+    columns: A:S
+    header_row: 2
+    sheet_name: GEOMIN CLO
+  JRS VENTURES:
+    col_prefix: ORE_4_
+    columns: A:S
+    header_row: 3
+    sheet_name: 'JRS VENTURES '
+  LLOYDS_CLO:
+    col_prefix: ORE_2_
+    columns: A:R
+    header_row: 2
+    sheet_name: LLOYDS CLO
+  NMDC DONOMALAI:
+    col_prefix: ORE_1_
+    columns: A:R
+    header_row: 2
+    sheet_name: NMDC DONOMALAI
+  DONIMALAI OVER SIZE RTRN:
+    col_prefix: ORE_12_
+    columns: A:R
+    header_row: 2
+    sheet_name: 'DONIMALAI OVER SIZE RTRN '
+  NMDC ROM:
+    col_prefix: ORE_5_
+    columns: A:Q
+    header_row: 2
+    sheet_name: NMDC ROM
+  LLYODS OVERSIZE CLO:
+    col_prefix: ORE_6_
+    columns: A:Q
+    header_row: 2
+    sheet_name: LLOYDS FINES OVER SIZE
+  BACHELI FINES OVER SIZE:
+    col_prefix: ORE_7_
+    columns: A:Q
+    header_row: 2
+    sheet_name: 'BACHELI FINES OVER SIZE '
+  JAYASWAL NECO:
+    col_prefix: ORE_9_
+    columns: B:R
+    header_row: 2
+    sheet_name: JAYASWAL NECO
+  NUT COKE:
+    col_prefix: NUTCOKE_
+    columns: A:I
+    header_row: 2
+    sheet_name: NUT COKE
+  PCI:
+    col_prefix: PCI_
+    columns: A:F
+    header_row: 6
+    sheet_name: PCI ANALYSIS -02
+  QUARTZ:
+    col_prefix: QUARTZ_
+    columns: A:I
+    header_row: 2
+    sheet_name: QUARTZ
+  SINTER:
+    col_prefix: SINTER_SP_02_
+    columns: A:P
+    header_row: 2
+    sheet_name: SINTER
+  LIMESTONE:
+    col_prefix: LIMESTONE_
+    columns: A:L
+    header_row: 2
+    sheet_name: LIMESTONE
+  LLOYDS_PELLET:
+    col_prefix: LLOYDS_PELLET_
+    columns: A:R
+    header_row: 2
+    sheet_name: LLOYDS-PELLET
+  ACORE IND.PVT LTD:
+    col_prefix: ORE_8_
+    columns: A:S
+    header_row: 3
+    sheet_name: ACORE IND.PVT LTD
+  GOMTI:
+    col_prefix: ORE_10_
+    columns: A:R
+    header_row: 3
+    sheet_name: GOMTI
+  TITANI FERROUS CLO:
+    col_prefix: ORE_11_
+    columns: A:Q
+    header_row: 3
+    sheet_name: TITANI FERROUS- CLO
+default_timeout: 180
+modes:
+- mode: rm
+  display_name: 11A BF-02 BUNKER
+- mode: dpr
+  display_name: BF-02 DPR
+- mode: hot_metal
+  display_name: 06 BF-02- HOT METAL, SLAG & GAS
+- mode: charge
+  display_name: CHARGE_AND_DUMP_REPORT
+- mode: stock
+  display_name: RM BULK STOCK
+download_filenames:
+- 11A BF-02 BUNKER
+- BF-02 DPR
+- 06 BF-02- HOT METAL
+- RM & HM
+download_filenames_map:
+  dpr: BF-02 DPR
+  rm: 11A BF-02 BUNKER
+download_folder: C:\Users\sasik\Downloads
+dpr_fields:
+  Date: date
+  COKE_OFFLINE_MT: coke_offline_mt
+  TOTAL_PURCHASE_COKE_MT: total_purchase_coke_mt
+  COKE_ONLINE_MT: coke_online_mt
+  DOLOMITE_MT: dolomite_mt
+  TOTAL_COKE_MT: total_coke_mt
+  YARD_NUTCOKE_MT: yard_nutcoke_mt
+  PRIME_NUT_COKE_MT: prime_nut_coke_mt
+  GEOMIN_MT: geomin_mt
+  JRSVENTURES_MT: jrsventures_mt
+  jAYSWAL_NECO_MT: jayaswal_neco_mt
+  LLOYDS_FINES_MT: lloyds_fines_mt
+  LLOYDS_MT: lloyds_mt
+  TOTAL_PELLET_MT: total_pellet_mt
+  NMDC_MT: nmdc_mt
+  DONIMALAI_FINES_OVER_SIZE_MT: donimalai_fines_over_size_mt
+  NMDC_ROM_MT: nmdc_rom_mt
+  PCI_MT: pci_mt
+  QUARTZITE_MT: quartzite_mt
+  SINTER_SP_02_MT: sinter_sp_02_mt
+  SLAG_GENERATION_MT: slag_generation_mt
+  Acore MN Ore_MT: acore_mn_ore_mt
+  TITAN_IF_MT: titan_if_mt
+  GOMTI_MT: gomti_mt
+eml:
+  file_station: 
+    https://ithelpdesk-ugml.sg4.quickconnect.to/?launchApp=SYNO.SDS.App.FileStation3.Instance&SynoToken=laNlkmozfCC0g
+  hourly_url: 
+    https://ithelpdesk-ugml.sg4.quickconnect.to/index.cgi?launchApp=SYNO.SDS.App.FileStation3.Instance&launchParam=openfile%3D%252FV-Optimaise%2520Data%252FBF2%2520AUTO%2520REPORTS%252FCHARGE%2520AND%2520DUMP%252FHOURLY%252F
+  password: Vop@202425
+  url: https://ithelpdesk-ugml.sg4.quickconnect.to/
+  user: voptim
+influxdb:
+  bucket: bf2_evonith_offline_utc
+  org: Blast Furnace, Evonith
+  timestamp_col: date
+  token: 
+    TJp5719yfyvJQMHjI6fETUWRbnH8R0ZumCklDq0wQ6vcLZmJ42WkZi8jXr6GI4ts38y5NL-lVOkpydeqM6nK_A==
+  url: https://eu-central-1-1.aws.cloud2.influxdata.com
 rm_feilds:
   Date: date
-  COKE_%_TMARB_ON: coke_pct_tmarb_on
-  COKE_%MOISTURE_ON: coke_pct_moisture_on
   COKE_%ASHDB_ON: coke_pct_ashdb_on
-  COKE_%VMDB_ON: coke_pct_vmdb_on
   COKE_%FCDB_ON: coke_pct_fcdb_on
-  COKE_%_TMARB_OFF: coke_pct_tmarb_off
-  COKE_%MOISTURE_OFF: coke_pct_moisture_off
-  COKE_%ASHDB_OFF: coke_pct_ashdb_off
-  COKE_%VMDB_OFF: coke_pct_vmdb_off
+  COKE_%MOISTURE_ON: coke_pct_moisture_on
+  COKE_%VMDB_ON: coke_pct_vmdb_on
+  COKE_%_TMARB_ON: coke_pct_tmarb_on
   COKE_%FCDB_OFF: coke_pct_fcdb_off
-  NUTCOKE_%TM: nutcoke_pct_tm
-  NUTCOKE_%IM: nutcoke_pct_im
+  COKE_%MOISTURE_OFF: coke_pct_moisture_off
+  COKE_%VMDB_OFF: coke_pct_vmdb_off
+  COKE_%_TMARB_OFF: coke_pct_tmarb_off
+  COKE_%ASHDB_OFF: coke_pct_ashdb_off
+  DOLOMITE_%CAO: dolomite_pct_cao
+  DOLOMITE_%MGO: dolomite_pct_mgo
+  DOLOMITE_%SIO2: dolomite_pct_sio2
+  DOLOMITE_%AL2O3: dolomite_pct_al2o3
+  DOLOMITE_%FE2O3: dolomite_pct_fe2o3
+  DOLOMITE_%LOI: dolomite_pct_loi
+  DOLOMITE_T_M%: dolomite_pct_tm
   NUTCOKE_%ASH: nutcoke_pct_ash
-  NUTCOKE_%VM: nutcoke_pct_vm
   NUTCOKE_%FC: nutcoke_pct_fc
-  SINTER_SP_02_%FE(T): sinter_sp_02_pct_fe_t
-  SINTER_SP_02_%FEO: sinter_sp_02_pct_feo
-  SINTER_SP_02_%SIO2: sinter_sp_02_pct_sio2
-  SINTER_SP_02_%AL2O3: sinter_sp_02_pct_al2o3
-  SINTER_SP_02_%CAO: sinter_sp_02_pct_cao
-  SINTER_SP_02_%MGO: sinter_sp_02_pct_mgo
-  SINTER_SP_02_%_T._ALKALI: sinter_sp_02_pct_total_alkali_pct_na2O
-  SINTER_SP_02_UNNAMED:_12: sinter_sp_02_pct_total_alkali_pct_k2O
-  SINTER_SP_02_%P: sinter_sp_02_pct_p
-  SINTER_SP_02_%MNO: sinter_sp_02_pct_mno
-  SINTER_SP_02_%TIO2: sinter_sp_02_pct_tio2
-  SINTER_SP_02_BASICITY: sinter_sp_02_basicity
-  QUARTZ_%SIO2: quartz_pct_sio2
+  NUTCOKE_%MOISTURE: nutcoke_pct_im
+  NUTCOKE_%TM: nutcoke_pct_tm
+  NUTCOKE_%VM: nutcoke_pct_vm
+  LIMESTONE_%CAO: limestone_pct_cao
+  LIMESTONE_%MGO: limestone_pct_mgo
+  LIMESTONE_%SIO2: limestone_pct_sio2
+  LIMESTONE_%AL2O3: limestone_pct_al2o3
+  LIMESTONE_%FE2O3: limestone_pct_fe2o3
+  LIMESTONE_%LOI: limestone_pct_loi
+  LIMESTONE_%TM: limestone_pct_tm
+  PCI_%ASH: pci_pct_ash
+  PCI_%FC: pci_pct_fc
+  PCI_%MOISTURE: pci_pct_im
+  PCI_%VM: pci_pct_vm
   QUARTZ_%AL2O3: quartz_pct_al2o3
   QUARTZ_%FE2O3: quartz_pct_fe2o3
   QUARTZ_%LOI: quartz_pct_loi
+  QUARTZ_%SIO2: quartz_pct_sio2
   QUARTZ_%TM: quartz_pct_tm
-  PCI_%IM: pci_pct_im
-  PCI_%ASH: pci_pct_ash
-  PCI_%VM: pci_pct_vm
-  PCI_%FC: pci_pct_fc
-  ORE_1_%FE(T): ore_1_pct_fe_t
-  ORE_1_%SIO2: ore_1_pct_sio2
+  SINTER_SP_02_%AL2O3: sinter_sp_02_pct_al2o3
+  SINTER_SP_02_%CAO: sinter_sp_02_pct_cao
+  SINTER_SP_02_%FE(T): sinter_sp_02_pct_fe_t
+  SINTER_SP_02_%FEO: sinter_sp_02_pct_feo
+  SINTER_SP_02_%MGO: sinter_sp_02_pct_mgo
+  SINTER_SP_02_%MNO: sinter_sp_02_pct_mno
+  SINTER_SP_02_%P: sinter_sp_02_pct_p
+  SINTER_SP_02_%SIO2: sinter_sp_02_pct_sio2
+  SINTER_SP_02_%TIO2: sinter_sp_02_pct_tio2
+  SINTER_SP_02_%_T._ALKALI: sinter_sp_02_pct_total_alkali_pct_na2O
+  SINTER_SP_02_BASICITY: sinter_sp_02_basicity
+  SINTER_SP_02_UNNAMED:_11: sinter_sp_02_pct_total_alkali_pct_k2O
+  LLOYDS_PELLET_%AL2O3: lloyds_pellet_pct_al2o3
+  LLOYDS_PELLET_%CAO: lloyds_pellet_pct_cao
+  LLOYDS_PELLET_%FE(T): lloyds_pellet_pct_fe2o3
+  LLOYDS_PELLET_%K2O: lloyds_pellet_pct_k2o
+  LLOYDS_PELLET_%LOI: lloyds_pellet_pct_loi
+  LLOYDS_PELLET_%MGO: lloyds_pellet_pct_mgo
+  LLOYDS_PELLET_%MNO: lloyds_pellet_pct_mno
+  LLOYDS_PELLET_%NA2O: lloyds_pellet_pct_na2o
+  LLOYDS_PELLET_%P: lloyds_pellet_pct_p
+  LLOYDS_PELLET_%SIO2: lloyds_pellet_pct_sio2
+  LLOYDS_PELLET_%TIO2: lloyds_pellet_pct_tio2
+  LLOYDS_PELLET_%TM: lloyds_pellet_pct_tm
   ORE_1_%AL2O3: ore_1_pct_al2o3
-  ORE_1_%P: ore_1_pct_p
-  ORE_1_%TIO2: ore_1_pct_tio2
-  ORE_1_%NA2O: ore_1_pct_na2o
-  ORE_1_%K2O: ore_1_pct_k2o
-  ORE_1_%MNO: ore_1_pct_mno
   ORE_1_%CAO: ore_1_pct_cao
-  ORE_1_%MGO: ore_1_pct_mgo
+  ORE_1_%FE(T): ore_1_pct_fe_t
+  ORE_1_%K2O: ore_1_pct_k2o
   ORE_1_%LOI: ore_1_pct_loi
+  ORE_1_%MGO: ore_1_pct_mgo
+  ORE_1_%MNO: ore_1_pct_mno
+  ORE_1_%NA2O: ore_1_pct_na2o
+  ORE_1_%P: ore_1_pct_p
+  ORE_1_%SIO2: ore_1_pct_sio2
+  ORE_1_%TIO2: ore_1_pct_tio2
   ORE_1_%TM: ore_1_pct_tm
-  ORE_2_%FE(T): ore_2_pct_fe_t
-  ORE_2_%SIO2: ore_2_pct_sio2
   ORE_2_%AL2O3: ore_2_pct_al2o3
-  ORE_2_%P: ore_2_pct_p
-  ORE_2_%TIO2: ore_2_pct_tio2
-  ORE_2_%NA2O: ore_2_pct_na2o
-  ORE_2_%K2O: ore_2_pct_k2o
-  ORE_2_%MNO: ore_2_pct_mno
   ORE_2_%CAO: ore_2_pct_cao
-  ORE_2_%MGO: ore_2_pct_mgo
+  ORE_2_%FE(T): ore_2_pct_fe_t
+  ORE_2_%K2O: ore_2_pct_k2o
   ORE_2_%LOI: ore_2_pct_loi
+  ORE_2_%MGO: ore_2_pct_mgo
+  ORE_2_%MNO: ore_2_pct_mno
+  ORE_2_%NA2O: ore_2_pct_na2o
+  ORE_2_%P: ore_2_pct_p
+  ORE_2_%SIO2: ore_2_pct_sio2
+  ORE_2_%TIO2: ore_2_pct_tio2
   ORE_2_%TM: ore_2_pct_tm
-  ORE_3_%FE(T): ore_3_pct_fe_t
-  ORE_3_%SIO2: ore_3_pct_sio2
   ORE_3_%AL2O3: ore_3_pct_al2o3
-  ORE_3_%P: ore_3_pct_p
-  ORE_3_%TIO2: ore_3_pct_tio2
-  ORE_3_%NA2O: ore_3_pct_na2o
-  ORE_3_%K2O: ore_3_pct_k2o
-  ORE_3_%MNO: ore_3_pct_mno
   ORE_3_%CAO: ore_3_pct_cao
-  ORE_3_%MGO: ore_3_pct_mgo
+  ORE_3_%FE(T): ore_3_pct_fe_t
+  ORE_3_%K2O: ore_3_pct_k2o
   ORE_3_%LOI: ore_3_pct_loi
+  ORE_3_%MGO: ore_3_pct_mgo
+  ORE_3_%MNO: ore_3_pct_mno
+  ORE_3_%NA2O: ore_3_pct_na2o
+  ORE_3_%P: ore_3_pct_p
+  ORE_3_%SIO2: ore_3_pct_sio2
+  ORE_3_%TIO2: ore_3_pct_tio2
   ORE_3_%TM: ore_3_pct_tm
-  ORE_4_%FE(T): ore_4_pct_fe_t
-  ORE_4_%SIO2: ore_4_pct_sio2
   ORE_4_%AL2O3: ore_4_pct_al2o3
-  ORE_4_%P: ore_4_pct_p
-  ORE_4_%TIO2: ore_4_pct_tio2
-  ORE_4_%NA2O: ore_4_pct_na2o
-  ORE_4_%K2O: ore_4_pct_k2o
-  ORE_4_%MNO: ore_4_pct_mno
   ORE_4_%CAO: ore_4_pct_cao
-  ORE_4_%MGO: ore_4_pct_mgo
+  ORE_4_%FE(T): ore_4_pct_fe_t
+  ORE_4_%K2O: ore_4_pct_k2o
   ORE_4_%LOI: ore_4_pct_loi
+  ORE_4_%MGO: ore_4_pct_mgo
+  ORE_4_%MNO: ore_4_pct_mno
+  ORE_4_%NA2O: ore_4_pct_na2o
+  ORE_4_%P: ore_4_pct_p
+  ORE_4_%SIO2: ore_4_pct_sio2
+  ORE_4_%TIO2: ore_4_pct_tio2
   ORE_4_%TM: ore_4_pct_tm
-  ORE_5_%FE(T): ore_5_pct_fe_t
-  ORE_5_%SIO2: ore_5_pct_sio2
   ORE_5_%AL2O3: ore_5_pct_al2o3
-  ORE_5_%P: ore_5_pct_p
-  ORE_5_%TIO2: ore_5_pct_tio2
-  ORE_5_%NA2O: ore_5_pct_na2o
-  ORE_5_%K2O: ore_5_pct_k2o
-  ORE_5_%MNO: ore_5_pct_mno
   ORE_5_%CAO: ore_5_pct_cao
-  ORE_5_%MGO: ore_5_pct_mgo
+  ORE_5_%FE(T): ore_5_pct_fe_t
+  ORE_5_%K2O: ore_5_pct_k2o
   ORE_5_%LOI: ore_5_pct_loi
+  ORE_5_%MGO: ore_5_pct_mgo
+  ORE_5_%MNO: ore_5_pct_mno
+  ORE_5_%NA2O: ore_5_pct_na2o
+  ORE_5_%P: ore_5_pct_p
+  ORE_5_%SIO2: ore_5_pct_sio2
+  ORE_5_%TIO2: ore_5_pct_tio2
   ORE_5_%TM: ore_5_pct_tm
-dpr_fields:
+  ORE_6_%AL2O3: ore_6_pct_al2o3
+  ORE_6_%CAO: ore_6_pct_cao
+  ORE_6_%FE(T): ore_6_pct_fe_t
+  ORE_6_%K2O: ore_6_pct_k2o
+  ORE_6_%LOI: ore_6_pct_loi
+  ORE_6_%MGO: ore_6_pct_mgo
+  ORE_6_%MNO: ore_6_pct_mno
+  ORE_6_%NA2O: ore_6_pct_na2o
+  ORE_6_%P: ore_6_pct_p
+  ORE_6_%SIO2: ore_6_pct_sio2
+  ORE_6_%TIO2: ore_6_pct_tio2
+  ORE_6_%TM: ore_6_pct_tm
+  ORE_7_%AL2O3: ore_7_pct_al2o3
+  ORE_7_%CAO: ore_7_pct_cao
+  ORE_7_%FE(T): ore_7_pct_fe_t
+  ORE_7_%K2O: ore_7_pct_k2o
+  ORE_7_%LOI: ore_7_pct_loi
+  ORE_7_%MGO: ore_7_pct_mgo
+  ORE_7_%MNO: ore_7_pct_mno
+  ORE_7_%NA2O: ore_7_pct_na2o
+  ORE_7_%P: ore_7_pct_p
+  ORE_7_%SIO2: ore_7_pct_sio2
+  ORE_7_%TIO2: ore_7_pct_tio2
+  ORE_7_%TM: ore_7_pct_tm
+  ORE_8_%AL2O3: ore_8_pct_al2o3
+  ORE_8_%CAO: ore_8_pct_cao
+  ORE_8_%FE(T): ore_8_pct_fe_t
+  ORE_8_%K2O: ore_8_pct_k2o
+  ORE_8_%LOI: ore_8_pct_loi
+  ORE_8_%MGO: ore_8_pct_mgo
+  ORE_8_%MNO: ore_8_pct_mno
+  ORE_8_%NA2O: ore_8_pct_na2o
+  ORE_8_%P: ore_8_pct_p
+  ORE_8_%SIO2: ore_8_pct_sio2
+  ORE_8_%TIO2: ore_8_pct_tio2
+  ORE_8_%TM: ore_8_pct_tm
+  ORE_9_%AL2O3: ore_9_pct_al2o3
+  ORE_9_%CAO: ore_9_pct_cao
+  ORE_9_%FE(T): ore_9_pct_fe_t
+  ORE_9_%K2O: ore_9_pct_k2o
+  ORE_9_%LOI: ore_9_pct_loi
+  ORE_9_%MGO: ore_9_pct_mgo
+  ORE_9_%MNO: ore_9_pct_mno
+  ORE_9_%NA2O: ore_9_pct_na2o
+  ORE_9_%P: ore_9_pct_p
+  ORE_9_%SIO2: ore_9pct_sio2
+  ORE_9_%TIO2: ore_9_pct_tio2
+  ORE_9_%TM: ore_9_pct_tm
+  ORE_10_%AL2O3: ore_10_pct_al2o3
+  ORE_10_%CAO: ore_10_pct_cao
+  ORE_10_%FE(T): ore_10_pct_fe_t
+  ORE_10_%K2O: ore_10_pct_k2o
+  ORE_10_%LOI: ore_10_pct_loi
+  ORE_10_%MGO: ore_10_pct_mgo
+  ORE_10_%MNO: ore_10_pct_mno
+  ORE_10_%NA2O: ore_10_pct_na2o
+  ORE_10_%P: ore_10_pct_p
+  ORE_10_%SIO2: ore_10_pct_sio2
+  ORE_10_%TIO2: ore_10_pct_tio2
+  ORE_10_%TM: ore_10_pct_tm
+  ORE_11_%AL2O3: ore_11_pct_al2o3
+  ORE_11_%CAO: ore_11_pct_cao
+  ORE_11_%FE(T): ore_11_pct_fe_t
+  ORE_11_%K2O: ore_11_pct_k2o
+  ORE_11_%LOI: ore_11_pct_loi
+  ORE_11_%MGO: ore_11_pct_mgo
+  ORE_11_%MNO: ore_11_pct_mno
+  ORE_11_%NA2O: ore_11_pct_na2o
+  ORE_11_%P: ore_11_pct_p
+  ORE_11_%SIO2: ore_11_pct_sio2
+  ORE_11_%TIO2: ore_11_pct_tio2
+  ORE_11_%TM: ore_11_pct_tm
+
+start_date: 11-Jul-2025
+material_groups:
+  coke_total_mt:
+  - coke_online_mt
+  - coke_offline_mt
+  flux_mt:
+  - quartz_mt
+  - dolomite_mt
+  - lime_stone_mt
+  ore_mt:
+  - nmdc_mt
+  - nmdc_rom_mt
+  - jrsventures_mt
+  - jrs_ventures_mt
+  - lloyds_clo_mt
+  - geomin_clo_mt
+  - mn_ore_mt
+  - gomti_mt
+  - lloyds_oversize_clo_mt
+  - bacheli_oversize_clo_mt
+  - sarda_energy__minerals_limited_mt
+  - nmdc_limited_lumps_10150_mm_kirandul_mt
+  - ss_enterprises__high_manetite_mt
+  - acore_industries_private_limited_manganese_ore_lump_mt
+  - tirupati_minerals__metals_manganese_ore_lump_mt
+  - nmdc_limited_donimalai_mt
+  - nmdc_limited_kumarswamy_mt
+  - jayaswal_neco_industries_limited_mt
+  - geomin_60_iron_fines_oversize_10mm_mt
+  - lloyds_metals_iron_fines_oversize_10mm_mt
+  - nmdc_limited_donimalai_iron_fines_oversize_10mm_mt
+  - nmdc_limited_bachelli_iron_fines_oversize_10mm_mt
+  - geomin_iron_manufacturing_fines_oversize_40mm_mt
+  - geomin_fines_oversize_40mm_mt
+  - nmdc_clo_oversize_40mm_donimalai_mt
+  - lloyds_metals__energyclo_oversize_40mm_mt
+  - nmdc_limited_crushed_rom_10_40mm_kirandul_mt
+  - geomin_fines_oversize_10mm_mt
+  - nmdc_clo_oversize_10mm_donimalai_mt
+  - lloyds_metals_clo_oversize_10mm_mt
+  - titani_ferrous_clo_mt
+charge_fields:
+  coke_online_mt: coke_on_mt
+  jrs_ventures_mt: jrsventures_mt
+  sinter_mt: sinter_mt
+  bacheli_oversize_clo_mt: bachelli_clo_mt
+  lloyds_clo_mt: llyods_mt
+  geomin_clo_mt: geomin_mt
+  quartz_mt: quartz_mt
+  coke_offline_mt: coke_off_mt
+  nut_coke_mt: nut_coke_mt
+  lloyds_pellet_mt: pellet_mt
+  lime_stone_mt: limestone_mt
+  dolomite_mt: dolomite_mt
+  mn_ore_mt: manganese_mt
+  gomti_mt: gomti_mt
+  sarda_energy__minerals_limited_mt: sarda_energy__minerals_limited_mt
+  nmdc_limited_lumps_10150_mm_kirandul_mt: 
+    nmdc_limited_lumps_10150_mm_kirandul_mt
+  ss_enterprises__high_manetite_mt: ss_enterprises__high_manetite_mt
+  acore_industries_private_limited_manganese_ore_lump_mt: acore_mn_ore_mt
+  tirupati_minerals__metals_manganese_ore_lump_mt: 
+    tirupati_minerals__metals_manganese_ore_lump_mt
+  nmdc_limited_donimalai_mt: nmdc_mt
+  nmdc_limited_kumarswamy_mt: nmdc_limited_kumarswamy_mt
+  jayaswal_neco_industries_limited_mt: jayaswal_neco_mt
+  geomin_60_iron_fines_oversize_10mm_mt: geomin_60_iron_fines_oversize_10mm_mt
+  lloyds_metals_iron_fines_oversize_10mm_mt: lloyds_oversize_clo_mt
+  nmdc_limited_donimalai_iron_fines_oversize_10mm_mt: 
+    nmdc_limited_donimalai_iron_fines_oversize_10mm_mt
+  nmdc_limited_bachelli_iron_fines_oversize_10mm_mt: 
+    nmdc_limited_bachelli_iron_fines_oversize_10mm_mt
+  geomin_iron_manufacturing_fines_oversize_40mm_mt: 
+    geomin_iron_manufacturing_fines_oversize_40mm_mt
+  geomin_fines_oversize_40mm_mt: geomin_fines_oversize_40mm_mt
+  nmdc_clo_oversize_40mm_donimalai_mt: nmdc_clo_oversize_40mm_donimalai_mt
+  lloyds_metals__energyclo_oversize_40mm_mt: 
+    lloyds_metals__energyclo_oversize_40mm_mt
+  nmdc_limited_crushed_rom_10_40mm_kirandul_mt: nmdc_rom_mt
+  geomin_fines_oversize_10mm_mt: geomin_fines_oversize_10mm_mt
+  nmdc_clo_oversize_10mm_donimalai_mt: nmdc_clo_oversize_10mm_donimalai_mt
+  lloyds_metals_clo_oversize_10mm_mt: lloyds_oversize_clo_mt
+rm_hm_fields:
   Date: date
-  TOTAL_COKE_MT: total_coke_mt
-  COKE_ONLINE_MT: coke_online_eml
-  COKE_OFFLINE_MT: coke_offline_mt
-  PRIME_NUT_COKE_MT: prime_nut_coke_mt
-  YARD_NUTCOKE_MT: yard_nutcoke_mt
-  PCI_MT: pci_mt
-  SINTER_SP_02_MT: sinter_sp_02_mt
-  NMDC_MT: nmdc_mt
-  GEOMIN_MT: geomin_mt
-  JRSVENTURES_MT: jrsventures_mt
-  LLOYDS_MT: lloyds_mt
-  LLOYDS_FINES_MT: lloyds_fines_mt
-  DOLOMITE_MT: dolomite_mt
-  QUARTZITE_MT: quartzite_mt
+  TI: ti
+  AI: ai
+  RDI: rdi
+  RI: ri
+influx:
+  host: https://eu-central-1-1.aws.cloud2.influxdata.com
+  org: Blast Furnace, Evonith
+  token: 
+    yT-IxzwVJdbagjlJM0yByybQA83IvWHkew4cy97TcMs1BSFSm8bAPMOyoIrKir06M7xo3s5xV6YEHe7jdFnBLw==
+  bucket: bf2_evonith_offline_utc
+  measurement: dpr_data
+sheet_field_mapping:
+  LAM COKE: total_coke_mt
+  NUT COKE:
+  - prime_nut_coke_mt
+  - yard_nutcoke_mt
+  DOLOMITE: dolomite_mt
+  GEOMIN CLO: geomin_mt
+  JRS VENTURES: jrs_mt
+  LLOYDS CLO: lloyds_mt
+  NMDC DONOMALAI: nmdc_mt
+  NMDC ROM: nmdc_rom_mt
+  PCI ANALYSIS -02: pci_mt
+  QUARTZ: quartz_mt
+  LIMESTONE: limestone_mt
+  LLOYDS-PELLET: lloyds_pellet_mt
