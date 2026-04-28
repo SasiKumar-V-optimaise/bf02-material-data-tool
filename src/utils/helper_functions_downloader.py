@@ -73,13 +73,19 @@ def setup_browser_driver():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
 
-    # 👇 IMPORTANT FIX
+    #  Force isolated environment
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-software-rasterizer")
+
+    # TEMP PROFILE (your part, keep it)
     user_data_dir = tempfile.mkdtemp()
     chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
 
     service = Service("/usr/bin/chromedriver")
 
-    return webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    return driver
 
 def login_eml(driver, wait, LOGIN_URL, USER, PASSWD):
     """
