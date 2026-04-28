@@ -7,7 +7,7 @@ import sys
 import logging
 import time
 from datetime import time as dt_time
-
+import tempfile
 
 import pandas as pd
 import openpyxl
@@ -64,6 +64,7 @@ def extract_datetime_from_filename(filename: str) -> datetime:
     except ValueError as e:
         raise ValueError(f"Filename does not match the expected datetime format: {stem}") from e
 
+
 def setup_browser_driver():
     chrome_options = Options()
 
@@ -71,7 +72,10 @@ def setup_browser_driver():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
+
+    # 👇 IMPORTANT FIX
+    user_data_dir = tempfile.mkdtemp()
+    chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
 
     service = Service("/usr/bin/chromedriver")
 
